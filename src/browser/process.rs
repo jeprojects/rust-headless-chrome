@@ -16,7 +16,7 @@ use regex::Regex;
 #[cfg(windows)]
 use winreg::{enums::HKEY_LOCAL_MACHINE, RegKey};
 #[cfg(windows)]
-use os::windows::process::CommandExt;
+use std::os::windows::process::CommandExt;
 
 #[cfg(not(feature = "fetch"))]
 use crate::browser::default_executable;
