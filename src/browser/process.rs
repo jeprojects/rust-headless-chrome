@@ -284,9 +284,9 @@ impl Process {
 
 
         #[cfg(windows)]
-        const CREATE_NO_WINDOW: u32 = 0x08000000;
+        const CREATE_NEW_PROCESS_GROUP: u32 = 0x00000200;
         #[cfg(windows)]
-        command.creation_flags(CREATE_NO_WINDOW);
+        command.creation_flags(CREATE_NEW_PROCESS_GROUP);
 
         let process = TemporaryProcess(command.args(&args).stderr(Stdio::piped()).spawn()?);
         Ok(process)
