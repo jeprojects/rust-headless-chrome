@@ -12,8 +12,11 @@ use log::*;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
 use regex::Regex;
+
 #[cfg(windows)]
 use winreg::{enums::HKEY_LOCAL_MACHINE, RegKey};
+#[cfg(windows)]
+use os::windows::process::CommandExt;
 
 #[cfg(not(feature = "fetch"))]
 use crate::browser::default_executable;
@@ -278,6 +281,12 @@ impl Process {
         if let Some(process_envs) = launch_options.process_envs.clone() {
             command.envs(process_envs);
         }
+
+
+        #[cfg(windows)]
+        const CREATE_NO_WINDOW: u32 = 0x08000000;
+        #[cfg(windows)]
+        command.creation_flags(CREATE_NO_WINDOW);
 
         let process = TemporaryProcess(command.args(&args).stderr(Stdio::piped()).spawn()?);
         Ok(process)
