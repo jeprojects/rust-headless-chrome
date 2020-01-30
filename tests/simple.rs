@@ -778,25 +778,3 @@ fn set_cookies() -> Fallible<()> {
     assert_eq!(cookies.len(), 1);
     Ok(())
 }
-
-#[test]
-fn pipe_connection() -> Fallible<()> {
-    use headless_chrome::browser::launch_options::LaunchOptionsBuilder;
-    use std::path::PathBuf;
-
-    let options = LaunchOptionsBuilder::default()
-        .headless(false)
-        .sandbox(true)
-        .path(Some(PathBuf::from("/Users/james/Library/Application Support/headless-chrome/mac-634997/chrome-mac/Chromium.app/Contents/MacOS/Chromium")))
-        .idle_browser_timeout(Duration::from_secs(300))
-        .build().unwrap();
-
-    let browser = Browser::new(options)?;
-
-    let tab = browser.wait_for_initial_tab()?;
-
-    tab.navigate_to("http://www.google.com")?
-        .wait_until_navigated();
-
-    Ok(())
-}
