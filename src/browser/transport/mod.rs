@@ -12,7 +12,6 @@ use log::*;
 use serde;
 
 use waiting_call_registry::WaitingCallRegistry;
-use web_socket_connection::WebSocketConnection;
 
 use crate::protocol::target;
 use crate::protocol::CallId;
@@ -20,7 +19,22 @@ use crate::protocol::Event;
 use crate::protocol::Message;
 use crate::{protocol, util};
 
+#[cfg(feature = "pipe")]
+use crate::browser::process_pipe::Process;
+#[cfg(not(feature = "pipe"))]
+use crate::browser::process_ws::Process;
+
+#[cfg(feature = "pipe")]
+use crate::browser::transport::pipe_connection::SocketConnection;
+#[cfg(not(feature = "pipe"))]
+use crate::browser::transport::web_socket_connection::SocketConnection;
+
+#[cfg(feature = "pipe")]
+mod pipe_connection;
+
 mod waiting_call_registry;
+
+#[cfg(not(feature = "pipe"))]
 mod web_socket_connection;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -53,7 +67,7 @@ type Listeners = Arc<Mutex<HashMap<ListenerId, Sender<Event>>>>;
 
 #[derive(Debug)]
 pub struct Transport {
-    web_socket_connection: Arc<WebSocketConnection>,
+    socket_connection: Arc<SocketConnection>,
     waiting_call_registry: Arc<WaitingCallRegistry>,
     listeners: Listeners,
     open: Arc<AtomicBool>,
@@ -66,14 +80,21 @@ pub struct Transport {
 pub struct ConnectionClosed {}
 
 impl Transport {
-    pub fn new(
-        ws_url: String,
-        process_id: Option<u32>,
-        idle_browser_timeout: Duration,
-    ) -> Fallible<Self> {
+    pub fn new(process: &Process, idle_browser_timeout: Duration) -> Fallible<Self> {
         let (messages_tx, messages_rx) = mpsc::channel();
-        let web_socket_connection =
-            Arc::new(WebSocketConnection::new(&ws_url, process_id, messages_tx)?);
+
+        #[cfg(not(feature = "pipe"))]
+        let socket_connection = {
+            let process_id: u32 = process.get_id();
+            let ws_url = &process.debug_ws_url;
+            Arc::new(SocketConnection::new(
+                ws_url,
+                Some(process_id),
+                messages_tx,
+            )?)
+        };
+        #[cfg(feature = "pipe")]
+        let socket_connection = { Arc::new(SocketConnection::new(process, messages_tx)?) };
 
         let waiting_call_registry = Arc::new(WaitingCallRegistry::new());
 
@@ -90,14 +111,55 @@ impl Transport {
             Arc::clone(&waiting_call_registry),
             Arc::clone(&listeners),
             Arc::clone(&open),
-            Arc::clone(&web_socket_connection),
+            Arc::clone(&socket_connection),
+            shutdown_rx,
+            Some(process.get_id()),
+            idle_browser_timeout,
+        );
+
+        Ok(Self {
+            socket_connection,
+            waiting_call_registry,
+            listeners,
+            open,
+            call_id_counter: Arc::new(AtomicU32::new(0)),
+            loop_shutdown_tx: guarded_shutdown_tx,
+        })
+    }
+
+    #[cfg(not(feature = "pipe"))]
+    pub fn connect(
+        ws_url: &str,
+        process_id: Option<u32>,
+        idle_browser_timeout: Duration,
+    ) -> Fallible<Self> {
+        let (messages_tx, messages_rx) = mpsc::channel();
+
+        let socket_connection = Arc::new(SocketConnection::new(&ws_url, process_id, messages_tx)?);
+
+        let waiting_call_registry = Arc::new(WaitingCallRegistry::new());
+
+        let listeners = Arc::new(Mutex::new(HashMap::new()));
+
+        let open = Arc::new(AtomicBool::new(true));
+
+        let (shutdown_tx, shutdown_rx) = mpsc::channel();
+
+        let guarded_shutdown_tx = Mutex::new(shutdown_tx);
+
+        Self::handle_incoming_messages(
+            messages_rx,
+            Arc::clone(&waiting_call_registry),
+            Arc::clone(&listeners),
+            Arc::clone(&open),
+            Arc::clone(&socket_connection),
             shutdown_rx,
             process_id,
             idle_browser_timeout,
         );
 
         Ok(Self {
-            web_socket_connection,
+            socket_connection,
             waiting_call_registry,
             listeners,
             open,
@@ -149,7 +211,7 @@ impl Transport {
                 }
             }
             MethodDestination::Browser => {
-                if let Err(e) = self.web_socket_connection.send_message(&message_text) {
+                if let Err(e) = self.socket_connection.send_message(&message_text) {
                     self.waiting_call_registry.unregister_call(call.id);
                     return Err(e);
                 } else {
@@ -210,7 +272,7 @@ impl Transport {
     }
 
     pub fn shutdown(&self) {
-        self.web_socket_connection.shutdown();
+        self.socket_connection.shutdown();
         let shutdown_tx = self.loop_shutdown_tx.lock().unwrap();
         let _ = shutdown_tx.send(());
     }
@@ -221,7 +283,7 @@ impl Transport {
         waiting_call_registry: Arc<WaitingCallRegistry>,
         listeners: Listeners,
         open: Arc<AtomicBool>,
-        conn: Arc<WebSocketConnection>,
+        conn: Arc<SocketConnection>,
         shutdown_rx: Receiver<()>,
         process_id: Option<u32>,
         idle_browser_timeout: Duration,

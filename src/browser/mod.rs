@@ -8,8 +8,6 @@ use failure::Fallible;
 use log::*;
 use serde;
 
-use process::Process;
-pub use process::{LaunchOptions, LaunchOptionsBuilder};
 pub use tab::Tab;
 use transport::Transport;
 use which::which;
@@ -21,13 +19,24 @@ use crate::protocol::target::methods::{CreateTarget, SetDiscoverTargets};
 use crate::protocol::{self, Event};
 use crate::util;
 
+#[cfg(feature = "pipe")]
+use crate::browser::process_pipe::Process;
+#[cfg(not(feature = "pipe"))]
+use crate::browser::process_ws::Process;
+
+use crate::browser::launch_options::LaunchOptions;
 #[cfg(feature = "fetch")]
 pub use fetcher::FetcherOptions;
 
 pub mod context;
 #[cfg(feature = "fetch")]
 mod fetcher;
-mod process;
+
+pub mod launch_options;
+#[cfg(feature = "pipe")]
+mod process_pipe;
+#[cfg(not(feature = "pipe"))]
+mod process_ws;
 pub mod tab;
 pub mod transport;
 
@@ -82,14 +91,10 @@ impl Browser {
     /// The browser process will be killed when this struct is dropped.
     pub fn new(launch_options: LaunchOptions) -> Fallible<Self> {
         let idle_browser_timeout = launch_options.idle_browser_timeout;
-        let process = Process::new(launch_options)?;
-        let process_id = process.get_id();
 
-        let transport = Arc::new(Transport::new(
-            process.debug_ws_url.clone(),
-            Some(process_id),
-            idle_browser_timeout,
-        )?);
+        let process = Process::new(launch_options)?;
+
+        let transport = Arc::new(Transport::new(&process, idle_browser_timeout)?);
 
         Self::create_browser(Some(process), transport, idle_browser_timeout)
     }
@@ -105,8 +110,13 @@ impl Browser {
     }
 
     /// Allows you to drive an externally-launched Chrome process instead of launch one via [`new`].
+    #[cfg(not(feature = "pipe"))]
     pub fn connect(debug_ws_url: String) -> Fallible<Self> {
-        let transport = Arc::new(Transport::new(debug_ws_url, None, Duration::from_secs(30))?);
+        let transport = Arc::new(Transport::connect(
+            &debug_ws_url,
+            None,
+            Duration::from_secs(30),
+        )?);
         trace!("created transport");
 
         Self::create_browser(None, transport, Duration::from_secs(30))

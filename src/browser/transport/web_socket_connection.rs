@@ -10,19 +10,19 @@ use websocket::{ClientBuilder, OwnedMessage};
 
 use crate::protocol;
 
-pub struct WebSocketConnection {
+pub struct SocketConnection {
     sender: Mutex<websocket::sender::Writer<TcpStream>>,
     process_id: Option<u32>,
 }
 
 // TODO websocket::sender::Writer is not :Debug...
-impl std::fmt::Debug for WebSocketConnection {
+impl std::fmt::Debug for SocketConnection {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
         write!(f, "WebSocketConnection {{}}")
     }
 }
 
-impl WebSocketConnection {
+impl SocketConnection {
     pub fn new(
         ws_url: &str,
         process_id: Option<u32>,
@@ -41,19 +41,6 @@ impl WebSocketConnection {
             sender: Mutex::new(sender),
             process_id,
         })
-    }
-
-    pub fn shutdown(&self) {
-        trace!(
-            "Shutting down WebSocket connection for Chrome {:?}",
-            self.process_id
-        );
-        if self.sender.lock().unwrap().shutdown_all().is_err() {
-            debug!(
-                "Couldn't shut down WS connection for Chrome {:?}",
-                self.process_id
-            );
-        }
     }
 
     fn dispatch_incoming_messages(
@@ -112,16 +99,27 @@ impl WebSocketConnection {
 
         Ok(client)
     }
-
     pub fn send_message(&self, message_text: &str) -> Fallible<()> {
         let message = websocket::Message::text(message_text);
         let mut sender = self.sender.lock().unwrap();
         sender.send_message(&message)?;
         Ok(())
     }
+    pub fn shutdown(&self) {
+        trace!(
+            "Shutting down WebSocket connection for Chrome {:?}",
+            self.process_id
+        );
+        if self.sender.lock().unwrap().shutdown_all().is_err() {
+            debug!(
+                "Couldn't shut down WS connection for Chrome {:?}",
+                self.process_id
+            );
+        }
+    }
 }
 
-impl Drop for WebSocketConnection {
+impl Drop for SocketConnection {
     fn drop(&mut self) {
         info!("dropping websocket connection");
     }
