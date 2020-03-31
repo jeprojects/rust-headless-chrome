@@ -778,3 +778,27 @@ fn set_cookies() -> Fallible<()> {
     assert_eq!(cookies.len(), 1);
     Ok(())
 }
+
+#[test]
+fn pipe_connection() -> Fallible<()> {
+    use headless_chrome::browser::launch_options::LaunchOptions;
+    use std::path::Path;
+
+    logging::enable_logging();
+
+    let launch_options = LaunchOptions::default_builder()
+        .headless(true)
+        .sandbox(true)
+        .idle_browser_timeout(Duration::from_secs(300))
+        .build()
+        .unwrap();
+
+    let browser = Browser::new(launch_options)?;
+
+    let tab = browser.wait_for_initial_tab()?;
+
+    /// Navigate to wikipedia
+    tab.navigate_to("https://www.wikipedia.org")?
+        .wait_until_navigated()?;
+    Ok(())
+}

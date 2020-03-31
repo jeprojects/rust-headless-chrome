@@ -1,8 +1,8 @@
 use crate::browser::process_pipe::Process;
 use crate::protocol;
-use failure::{Fallible};
+use failure::Fallible;
 use log::{info, trace, warn};
-use std::io::{BufRead, BufReader, BufWriter, Write};
+use std::io::{BufRead, BufReader, BufWriter, Read, Write};
 use std::sync::{mpsc, Mutex};
 
 #[cfg(unix)]
@@ -13,11 +13,22 @@ pub struct SocketConnection {
     sender: Mutex<BufWriter<UnixStream>>,
 }
 
+#[cfg(windows)]
+use std::fs::File;
+
+#[cfg(windows)]
+#[derive(Debug)]
+pub struct SocketConnection {
+    sender: Mutex<BufWriter<File>>,
+}
+
+/*
 impl std::fmt::Debug for SocketConnection {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
         write!(f, "WebSocketConnection {{}}")
     }
 }
+*/
 
 impl SocketConnection {
     pub fn new(
@@ -48,8 +59,8 @@ impl SocketConnection {
             sender: Mutex::new(sender),
         })
     }
-    fn dispatch_incoming_messages(
-        mut receiver: BufReader<UnixStream>,
+    fn dispatch_incoming_messages<T: Read>(
+        mut receiver: BufReader<T>,
         messages_tx: mpsc::Sender<protocol::Message>,
     ) {
         let mut message = vec![];

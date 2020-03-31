@@ -28,6 +28,8 @@ walkdir = { version = "2", optional = true }
 
 [target.'cfg(windows)'.dependencies]
 winreg = "0.6"
+winapi = { version = "0.3.8", features = ["std", "handleapi", "namedpipeapi", "processthreadsapi", "winnt", "fileapi", "minwinbase", "minwindef", "winbase", "errhandlingapi"] }
+modular-bitfield = "0.6.0"
 
 [target.'cfg(unix)'.dependencies]
 nix = { version = "0.16.1", optional = true }
