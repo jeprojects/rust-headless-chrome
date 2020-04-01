@@ -9,6 +9,7 @@ use std::sync::{mpsc, Mutex};
 use std::os::unix::net::UnixStream;
 
 #[cfg(unix)]
+#[derive(Debug)]
 pub struct SocketConnection {
     sender: Mutex<BufWriter<UnixStream>>,
 }

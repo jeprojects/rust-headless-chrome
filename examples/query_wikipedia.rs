@@ -1,6 +1,7 @@
 use failure::Fallible;
 
-use headless_chrome::{Browser, LaunchOptions};
+use headless_chrome::browser::launch_options::LaunchOptions;
+use headless_chrome::Browser;
 
 fn query(input: &str) -> Fallible<()> {
     let browser = Browser::new(

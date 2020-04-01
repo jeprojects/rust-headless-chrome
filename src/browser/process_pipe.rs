@@ -19,21 +19,23 @@ use nix::{
     unistd::{close, dup2, execvp, fork, ForkResult, Pid},
 };
 #[cfg(unix)]
+use std::ffi::{CStr, CString};
+#[cfg(unix)]
+use std::net::Shutdown;
+#[cfg(unix)]
 use std::os::unix::{
     io::{AsRawFd, RawFd},
     net::UnixStream,
 };
 #[cfg(unix)]
-use std::ffi::{CStr, CString};
-#[cfg(unix)]
-use std::net::Shutdown;
+use std::process::abort;
 
 #[cfg(windows)]
 use modular_bitfield::prelude::*;
 #[cfg(windows)]
-use std::fs::{File, OpenOptions};
-#[cfg(windows)]
 use std::ffi::{OsStr, OsString};
+#[cfg(windows)]
+use std::fs::{File, OpenOptions};
 #[cfg(windows)]
 use std::os::windows::{
     ffi::OsStrExt,
@@ -377,6 +379,7 @@ impl Child {
     }
 }
 
+#[cfg(windows)]
 fn create_pipe() -> (File, File) {
     let mut os_str: OsString = OsStr::new(r#"\\.\pipe\headless-chrome-"#).into();
     os_str.push(rand::random::<u16>().to_string());
@@ -438,6 +441,7 @@ The buffer has the following layout:
 *   unsigned char crt_flags[number_of_fds]
 *   HANDLE os_handle[number_of_fds]
 */
+#[cfg(windows)]
 #[bitfield]
 #[derive(Debug, PartialEq, Eq)]
 pub struct Pipes {
@@ -454,6 +458,7 @@ pub struct Pipes {
     childout: B32,
 }
 
+#[cfg(windows)]
 fn pipe_factory(child_input: RawHandle, child_output: RawHandle) -> Fallible<Pipes> {
     let mut pipes = Pipes::new();
 
@@ -483,17 +488,21 @@ fn pipe_factory(child_input: RawHandle, child_output: RawHandle) -> Fallible<Pip
     Ok(pipes)
 }
 
+#[cfg(windows)]
 #[derive(Debug)]
 pub struct Handle(RawHandle);
 
+#[cfg(windows)]
 unsafe impl Send for Handle {}
 
+#[cfg(windows)]
 impl AsRawHandle for Handle {
     fn as_raw_handle(&self) -> RawHandle {
         self.0
     }
 }
 
+#[cfg(windows)]
 impl FromRawHandle for Handle {
     unsafe fn from_raw_handle(handle: RawHandle) -> Handle {
         Handle(handle)

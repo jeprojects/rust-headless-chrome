@@ -2,7 +2,8 @@ use std::ffi::OsStr;
 
 use failure::Fallible;
 
-use headless_chrome::{browser::default_executable, Browser, LaunchOptions};
+use headless_chrome::browser::launch_options::LaunchOptions;
+use headless_chrome::{browser::default_executable, Browser};
 
 #[test]
 fn test_extension() -> Fallible<()> {
