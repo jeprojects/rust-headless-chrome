@@ -159,13 +159,13 @@ fn form_interaction() -> Fallible<()> {
     let (_, browser, tab) = dumb_server(include_str!("form.html"));
     tab.wait_for_element("input#target")?
         .type_into("mothership")?;
-    tab.wait_for_element("button")?.click()?;
+    tab.wait_for_element("button")?.click(1)?;
     let d = tab.wait_for_element("div#protocol")?.get_description()?;
     assert!(d
         .find(|n| n.node_value == "Missiles launched against mothership")
         .is_some());
-    tab.wait_for_element("input#sneakattack")?.click()?;
-    tab.wait_for_element("button")?.click()?;
+    tab.wait_for_element("input#sneakattack")?.click(1)?;
+    tab.wait_for_element("button")?.click(1)?;
     let d = tab.wait_for_element("div#protocol")?.get_description()?;
     assert!(d
         .find(|n| n.node_value == "Comrades, have a nice day!")

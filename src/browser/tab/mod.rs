@@ -611,7 +611,7 @@ impl Tab {
         Ok(self)
     }
 
-    pub fn click_point(&self, point: Point) -> Fallible<&Self> {
+    pub fn click_point(&self, point: Point, click_count: u32) -> Fallible<&Self> {
         trace!("Clicking point: {:?}", point);
         if point.x == 0.0 && point.y == 0.0 {
             warn!("Midpoint of element shouldn't be 0,0. Something is probably wrong.")
@@ -625,7 +625,7 @@ impl Tab {
             x: point.x,
             y: point.y,
             button: Some("left"),
-            click_count: Some(1),
+            click_count: Some(click_count),
         })?;
         self.call_method(input::methods::DispatchMouseEvent {
             event_type: "mouseReleased",

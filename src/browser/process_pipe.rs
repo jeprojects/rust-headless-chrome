@@ -5,6 +5,8 @@ use failure::{format_err, Fallible};
 use log::{info, trace};
 use std::path::PathBuf;
 
+//Todo: Send proper error if chrome binary not found
+
 #[cfg(feature = "fetch")]
 use super::fetcher::{Fetcher, FetcherOptions};
 

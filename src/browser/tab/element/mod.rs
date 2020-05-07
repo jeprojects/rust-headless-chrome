@@ -74,16 +74,16 @@ impl<'a> Element<'a> {
         Ok(self)
     }
 
-    pub fn click(&self) -> Fallible<&Self> {
+    pub fn click(&self, click_count: u32) -> Fallible<&Self> {
         self.scroll_into_view()?;
         debug!("Clicking element {:?}", &self);
         let midpoint = self.get_midpoint()?;
-        self.parent.click_point(midpoint)?;
+        self.parent.click_point(midpoint, click_count)?;
         Ok(self)
     }
 
     pub fn type_into(&self, text: &str) -> Fallible<&Self> {
-        self.click()?;
+        self.click(1)?;
 
         debug!("Typing into element ( {:?} ): {}", &self, text);
 
