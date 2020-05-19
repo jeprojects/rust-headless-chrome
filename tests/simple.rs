@@ -802,3 +802,14 @@ fn pipe_connection() -> Fallible<()> {
         .wait_until_navigated()?;
     Ok(())
 }
+#[test]
+fn keyboard() -> Fallible<()> {
+    logging::enable_logging();
+    let (_, browser, tab) = dumb_server(include_str!("form.html"));
+    let element = tab.wait_for_element("input#target")?;
+    element.type_into("mothership")?;
+    element.click(1)?;
+    let mut keyboard = tab.keyboard();
+    keyboard.type_str("This is a test")?;
+    Ok(())
+}

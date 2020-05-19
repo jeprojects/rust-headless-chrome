@@ -40,12 +40,21 @@ pub mod methods {
     pub struct DispatchKeyEvent<'a> {
         #[serde(rename = "type")]
         pub event_type: &'a str,
+        pub modifiers: JsUInt,
         #[serde(skip_serializing_if = "Option::is_none")]
         pub key: Option<&'a str>,
         #[serde(skip_serializing_if = "Option::is_none")]
         pub text: Option<&'a str>,
         #[serde(skip_serializing_if = "Option::is_none")]
         pub code: Option<&'a str>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(rename = "unmodifiedText")]
+        pub unmodified_text: Option<&'a str>,
+        pub location: JsUInt,
+        #[serde(rename = "isKeypad")]
+        pub is_keypad: bool,
+        #[serde(rename = "autoRepeat")]
+        pub auto_repeat: bool,
         pub windows_virtual_key_code: JsUInt,
         pub native_virtual_key_code: JsUInt,
     }
@@ -55,5 +64,18 @@ pub mod methods {
     impl<'a> Method for DispatchKeyEvent<'a> {
         const NAME: &'static str = "Input.dispatchKeyEvent";
         type ReturnObject = DispatchKeyEventReturnObject;
+    }
+
+    #[derive(Serialize, Debug)]
+    #[serde(rename_all = "camelCase")]
+    pub struct InsertText<'a> {
+        pub text: &'a str,
+    }
+    #[derive(Debug, Deserialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct InsertTextReturnObject {}
+    impl<'a> Method for InsertText<'a> {
+        const NAME: &'static str = "Input.insertText";
+        type ReturnObject = InsertTextReturnObject;
     }
 }

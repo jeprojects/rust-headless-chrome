@@ -21,6 +21,7 @@ use crate::protocol::{
 use crate::{protocol, protocol::logs::methods::ViolationSetting, util};
 
 use super::transport::SessionId;
+use crate::browser::tab::keyboard::Keyboard;
 use crate::browser::transport::Transport;
 use crate::protocol::fetch::events::RequestPausedEvent;
 use crate::protocol::fetch::methods::{AuthChallengeResponse, ContinueRequest};
@@ -30,6 +31,7 @@ use std::collections::HashMap;
 use std::thread::sleep;
 
 pub mod element;
+mod keyboard;
 mod keys;
 mod point;
 
@@ -539,57 +541,14 @@ impl Tab {
         Ok(node)
     }
 
-    pub fn type_str(&self, string_to_type: &str) -> Fallible<&Self> {
-        for c in string_to_type.split("") {
-            // split call above will have empty string at start and end which we won't type
-            if c == "" {
-                continue;
-            }
-            self.press_key(c)?;
-        }
-        Ok(self)
+    pub fn keyboard(&self) -> Keyboard {
+        Keyboard::new(&self)
     }
 
+    #[deprecated(since = "0.9.1", note = "Please use the keyboard function instead")]
     pub fn press_key(&self, key: &str) -> Fallible<&Self> {
-        let definition = keys::get_key_definition(key)?;
-
-        // See https://github.com/GoogleChrome/puppeteer/blob/62da2366c65b335751896afbb0206f23c61436f1/lib/Input.js#L114-L115
-        let text = definition.text.or_else(|| {
-            if definition.key.len() == 1 {
-                Some(definition.key)
-            } else {
-                None
-            }
-        });
-
-        // See https://github.com/GoogleChrome/puppeteer/blob/62da2366c65b335751896afbb0206f23c61436f1/lib/Input.js#L52
-        let key_down_event_type = if text.is_some() {
-            "keyDown"
-        } else {
-            "rawKeyDown"
-        };
-
-        let key = Some(definition.key);
-        let code = Some(definition.code);
-
-        self.optional_slow_motion_sleep(25);
-
-        self.call_method(input::methods::DispatchKeyEvent {
-            event_type: key_down_event_type,
-            key,
-            text,
-            code: Some(definition.code),
-            windows_virtual_key_code: definition.key_code,
-            native_virtual_key_code: definition.key_code,
-        })?;
-        self.call_method(input::methods::DispatchKeyEvent {
-            event_type: "keyUp",
-            key,
-            text,
-            code,
-            windows_virtual_key_code: definition.key_code,
-            native_virtual_key_code: definition.key_code,
-        })?;
+        let mut keyboard = self.keyboard();
+        keyboard.press(key, Some(25))?;
         Ok(self)
     }
 

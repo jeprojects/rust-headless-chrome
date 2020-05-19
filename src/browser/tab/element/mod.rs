@@ -87,7 +87,8 @@ impl<'a> Element<'a> {
 
         debug!("Typing into element ( {:?} ): {}", &self, text);
 
-        self.parent.type_str(text)?;
+        let mut keyboard = self.parent.keyboard();
+        keyboard.type_str(text)?;
 
         Ok(self)
     }
