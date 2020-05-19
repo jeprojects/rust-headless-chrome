@@ -22,7 +22,7 @@ impl<'a> Keyboard<'a> {
             parent,
         }
     }
-    pub fn down(&mut self, key: &str) -> Fallible<&Self> {
+    pub fn down(&mut self, key: &str) -> Fallible<()> {
         let description = get_key_definition(key, self.modifiers)?;
 
         // See https://github.com/GoogleChrome/puppeteer/blob/62da2366c65b335751896afbb0206f23c61436f1/lib/Input.js#L52
@@ -51,10 +51,10 @@ impl<'a> Keyboard<'a> {
             native_virtual_key_code: description.key_code,
         })?;
 
-        Ok(self)
+        Ok(())
     }
 
-    pub fn up(&mut self, key: &str) -> Fallible<&Self> {
+    pub fn up(&mut self, key: &str) -> Fallible<()> {
         let description = get_key_definition(key, self.modifiers)?;
 
         self.modifiers &= !self.modifier_bit(description.key);
@@ -74,22 +74,22 @@ impl<'a> Keyboard<'a> {
             native_virtual_key_code: description.key_code,
         })?;
 
-        Ok(self)
+        Ok(())
     }
-    pub fn press(&mut self, key: &str, delay: Option<u64>) -> Fallible<&Self> {
+    pub fn press(&mut self, key: &str, delay: Option<u64>) -> Fallible<()> {
         self.down(key)?;
         if let Some(delay) = delay {
             sleep(Duration::from_millis(delay));
         }
         self.up(key)?;
-        Ok(self)
+        Ok(())
     }
-    pub fn send_character(&self, text: &str) -> Fallible<&Self> {
+    pub fn send_character(&self, text: &str) -> Fallible<()> {
         self.parent
             .call_method(input::methods::InsertText { text })?;
-        Ok(self)
+        Ok(())
     }
-    pub fn type_str(&mut self, string_to_type: &str) -> Fallible<&Self> {
+    pub fn type_str(&mut self, string_to_type: &str) -> Fallible<()> {
         for c in string_to_type.split("") {
             if c == "" {
                 continue;
@@ -100,7 +100,7 @@ impl<'a> Keyboard<'a> {
                 self.send_character(c)?;
             }
         }
-        Ok(self)
+        Ok(())
     }
 
     fn modifier_bit(&self, key: &str) -> JsUInt {
