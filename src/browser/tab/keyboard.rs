@@ -4,26 +4,28 @@ use std::collections::HashSet;
 use crate::browser::tab::keys::USKEYBOARD_LAYOUT;
 use crate::protocol::input;
 use crate::protocol::types::JsUInt;
+use std::sync::{Arc, Mutex};
 use std::thread::sleep;
 use std::time::Duration;
 
 #[derive(Clone)]
 pub struct Keyboard<'a> {
-    pressed_keys: HashSet<String>,
-    modifiers: u32,
+    pressed_keys: Arc<Mutex<HashSet<String>>>,
+    modifiers: Arc<Mutex<u32>>,
     parent: &'a super::Tab,
 }
 
 impl<'a> Keyboard<'a> {
     pub fn new(parent: &'a super::Tab) -> Keyboard {
         Keyboard {
-            pressed_keys: HashSet::new(),
-            modifiers: 0,
+            pressed_keys: Arc::new(Mutex::new(HashSet::new())),
+            modifiers: Arc::new(Mutex::new(0)),
             parent,
         }
     }
-    pub fn down(&mut self, key: &str) -> Fallible<()> {
-        let description = get_key_definition(key, self.modifiers)?;
+    pub fn down(&self, key: &str) -> Fallible<()> {
+        let mut modifiers = self.modifiers.lock().unwrap();
+        let description = get_key_definition(key, *modifiers)?;
 
         // See https://github.com/GoogleChrome/puppeteer/blob/62da2366c65b335751896afbb0206f23c61436f1/lib/Input.js#L52
         let key_down_event_type = if description.text.is_some() {
@@ -32,14 +34,15 @@ impl<'a> Keyboard<'a> {
             "rawKeyDown"
         };
 
-        let auto_repeat = self.pressed_keys.contains(description.code);
-        self.pressed_keys
-            .insert(description.code.clone().to_string());
-        self.modifiers |= self.modifier_bit(description.key);
+        let mut pressed_keys = self.pressed_keys.lock().unwrap();
+        let auto_repeat = pressed_keys.contains(description.code);
+        pressed_keys.insert(description.code.clone().to_string());
+
+        *modifiers |= self.modifier_bit(description.key);
 
         self.parent.call_method(input::methods::DispatchKeyEvent {
             event_type: key_down_event_type,
-            modifiers: self.modifiers,
+            modifiers: *modifiers,
             key: Some(description.key),
             text: description.text,
             code: Some(description.code),
@@ -55,14 +58,17 @@ impl<'a> Keyboard<'a> {
     }
 
     pub fn up(&mut self, key: &str) -> Fallible<()> {
-        let description = get_key_definition(key, self.modifiers)?;
+        let mut modifiers = self.modifiers.lock().unwrap();
+        let description = get_key_definition(key, *modifiers)?;
 
-        self.modifiers &= !self.modifier_bit(description.key);
-        self.pressed_keys.remove(description.code);
+        *modifiers &= !self.modifier_bit(description.key);
+
+        let mut pressed_keys = self.pressed_keys.lock().unwrap();
+        pressed_keys.remove(description.code);
 
         self.parent.call_method(input::methods::DispatchKeyEvent {
             event_type: "keyUp",
-            modifiers: self.modifiers,
+            modifiers: *modifiers,
             key: Some(description.key),
             text: None,
             code: Some(description.code),
@@ -94,7 +100,7 @@ impl<'a> Keyboard<'a> {
             if c == "" {
                 continue;
             }
-            if get_key_definition(c, self.modifiers).is_ok() {
+            if get_key_definition(c, *self.modifiers.lock().unwrap()).is_ok() {
                 self.press(c, Some(25))?;
             } else {
                 self.send_character(c)?;
