@@ -547,8 +547,7 @@ impl Tab {
 
     #[deprecated(since = "0.9.1", note = "Please use the keyboard function instead")]
     pub fn press_key(&self, key: &str) -> Fallible<&Self> {
-        let mut keyboard = self.keyboard();
-        keyboard.press(key, Some(25))?;
+        self.keyboard().press(key, Some(25))?;
         Ok(self)
     }
 

@@ -809,7 +809,7 @@ fn keyboard() -> Fallible<()> {
     let element = tab.wait_for_element("input#target")?;
     element.type_into("mothership")?;
     element.click(1)?;
-    let mut keyboard = tab.keyboard();
+    let keyboard = tab.keyboard();
     keyboard.type_str("This is a test")?;
     keyboard.down("Shift")?;
     keyboard.down("Alt")?;

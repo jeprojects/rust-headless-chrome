@@ -57,7 +57,7 @@ impl<'a> Keyboard<'a> {
         Ok(())
     }
 
-    pub fn up(&mut self, key: &str) -> Fallible<()> {
+    pub fn up(&self, key: &str) -> Fallible<()> {
         let mut modifiers = self.modifiers.lock().unwrap();
         let description = get_key_definition(key, *modifiers)?;
 
@@ -82,7 +82,7 @@ impl<'a> Keyboard<'a> {
 
         Ok(())
     }
-    pub fn press(&mut self, key: &str, delay: Option<u64>) -> Fallible<()> {
+    pub fn press(&self, key: &str, delay: Option<u64>) -> Fallible<()> {
         self.down(key)?;
         if let Some(delay) = delay {
             sleep(Duration::from_millis(delay));
@@ -95,7 +95,7 @@ impl<'a> Keyboard<'a> {
             .call_method(input::methods::InsertText { text })?;
         Ok(())
     }
-    pub fn type_str(&mut self, string_to_type: &str) -> Fallible<()> {
+    pub fn type_str(&self, string_to_type: &str) -> Fallible<()> {
         for c in string_to_type.split("") {
             if c == "" {
                 continue;
