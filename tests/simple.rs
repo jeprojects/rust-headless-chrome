@@ -811,5 +811,10 @@ fn keyboard() -> Fallible<()> {
     element.click(1)?;
     let mut keyboard = tab.keyboard();
     keyboard.type_str("This is a test")?;
+    keyboard.down("Shift")?;
+    keyboard.down("Alt")?;
+    keyboard.press("Z", Some(100))?;
+    keyboard.up("Shift")?;
+    keyboard.up("Alt")?;
     Ok(())
 }

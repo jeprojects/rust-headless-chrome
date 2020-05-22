@@ -31,7 +31,7 @@ use std::collections::HashMap;
 use std::thread::sleep;
 
 pub mod element;
-mod keyboard;
+pub mod keyboard;
 mod keys;
 mod point;
 
