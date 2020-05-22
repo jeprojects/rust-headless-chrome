@@ -2,25 +2,30 @@ use failure::{Fail, Fallible};
 use std::collections::HashSet;
 
 use crate::browser::tab::keys::USKEYBOARD_LAYOUT;
+use crate::browser::transport::{SessionId, Transport};
+use crate::protocol;
 use crate::protocol::input;
 use crate::protocol::types::JsUInt;
 use std::sync::{Arc, Mutex};
 use std::thread::sleep;
 use std::time::Duration;
+use log::*;
 
 #[derive(Clone)]
-pub struct Keyboard<'a> {
+pub struct Keyboard {
     pressed_keys: Arc<Mutex<HashSet<String>>>,
     modifiers: Arc<Mutex<u32>>,
-    parent: &'a super::Tab,
+    transport: Arc<Transport>,
+    session_id: SessionId,
 }
 
-impl<'a> Keyboard<'a> {
-    pub fn new(parent: &'a super::Tab) -> Keyboard {
+impl Keyboard {
+    pub fn new(transport: Arc<Transport>, session_id: SessionId) -> Keyboard {
         Keyboard {
             pressed_keys: Arc::new(Mutex::new(HashSet::new())),
             modifiers: Arc::new(Mutex::new(0)),
-            parent,
+            transport,
+            session_id,
         }
     }
     pub fn down(&self, key: &str) -> Fallible<()> {
@@ -40,7 +45,7 @@ impl<'a> Keyboard<'a> {
 
         *modifiers |= self.modifier_bit(description.key);
 
-        self.parent.call_method(input::methods::DispatchKeyEvent {
+        self.call_method(input::methods::DispatchKeyEvent {
             event_type: key_down_event_type,
             modifiers: *modifiers,
             key: Some(description.key),
@@ -66,7 +71,7 @@ impl<'a> Keyboard<'a> {
         let mut pressed_keys = self.pressed_keys.lock().unwrap();
         pressed_keys.remove(description.code);
 
-        self.parent.call_method(input::methods::DispatchKeyEvent {
+        self.call_method(input::methods::DispatchKeyEvent {
             event_type: "keyUp",
             modifiers: *modifiers,
             key: Some(description.key),
@@ -91,8 +96,7 @@ impl<'a> Keyboard<'a> {
         Ok(())
     }
     pub fn send_character(&self, text: &str) -> Fallible<()> {
-        self.parent
-            .call_method(input::methods::InsertText { text })?;
+        self.call_method(input::methods::InsertText { text })?;
         Ok(())
     }
     pub fn type_str(&self, string_to_type: &str) -> Fallible<()> {
@@ -117,6 +121,19 @@ impl<'a> Keyboard<'a> {
             "Shift" => 8,
             _ => 0,
         }
+    }
+    fn call_method<C>(&self, method: C) -> Fallible<C::ReturnObject>
+    where
+        C: protocol::Method + serde::Serialize + std::fmt::Debug,
+    {
+        trace!("Calling method: {:?}", method);
+        let result = self
+            .transport
+            .call_method_on_target(self.session_id.clone(), method);
+        let mut result_string = format!("{:?}", result);
+        result_string.truncate(70);
+        trace!("Got result: {:?}", result_string);
+        result
     }
 }
 

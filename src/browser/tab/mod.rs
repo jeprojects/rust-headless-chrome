@@ -105,6 +105,7 @@ pub struct Tab {
     default_timeout: Arc<RwLock<Duration>>,
     event_listeners: Arc<Mutex<Vec<Arc<SyncSendEvent>>>>,
     slow_motion_multiplier: Arc<RwLock<f64>>, // there's no AtomicF64, otherwise would use that
+    pub keyboard: Keyboard,
 }
 
 #[derive(Debug, Fail)]
@@ -140,7 +141,7 @@ impl Tab {
     pub fn new(target_info: TargetInfo, transport: Arc<Transport>) -> Fallible<Self> {
         let target_id = target_info.target_id.clone();
 
-        let session_id = transport
+        let session_id: SessionId = transport
             .call_method_on_browser(target::methods::AttachToTarget {
                 target_id: &target_id,
                 flatten: None,
@@ -151,6 +152,8 @@ impl Tab {
         debug!("New tab attached with session ID: {:?}", session_id);
 
         let target_info_mutex = Arc::new(Mutex::new(target_info));
+
+        let keyboard = Keyboard::new(Arc::clone(&transport), session_id.clone());
 
         let tab = Self {
             target_id,
@@ -169,6 +172,7 @@ impl Tab {
             default_timeout: Arc::new(RwLock::new(Duration::from_secs(3))),
             event_listeners: Arc::new(Mutex::new(Vec::new())),
             slow_motion_multiplier: Arc::new(RwLock::new(0.0)),
+            keyboard,
         };
 
         tab.call_method(page::methods::Enable {})?;
@@ -541,13 +545,9 @@ impl Tab {
         Ok(node)
     }
 
-    pub fn keyboard(&self) -> Keyboard {
-        Keyboard::new(&self)
-    }
-
     #[deprecated(since = "0.9.1", note = "Please use the keyboard function instead")]
     pub fn press_key(&self, key: &str) -> Fallible<&Self> {
-        self.keyboard().press(key, Some(25))?;
+        self.keyboard.press(key, Some(25))?;
         Ok(self)
     }
 
