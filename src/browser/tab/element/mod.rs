@@ -93,6 +93,8 @@ impl<'a> Element<'a> {
     }
 
     pub fn insert_text(&self, text: &str) -> Fallible<&Self> {
+        self.click(1)?;
+        debug!("Inserting text into element ( {:?} ): {}", &self, text);
         self.parent
             .call_method(input::methods::InsertText { text })?;
         Ok(self)
