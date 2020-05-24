@@ -6,9 +6,9 @@ use log::*;
 
 use crate::browser::tab::point::Point;
 use crate::browser::tab::NoElementFound;
-use crate::protocol::dom;
 use crate::protocol::page;
 use crate::protocol::runtime;
+use crate::protocol::{dom, input};
 
 mod box_model;
 
@@ -89,6 +89,12 @@ impl<'a> Element<'a> {
 
         self.parent.keyboard.type_str(text)?;
 
+        Ok(self)
+    }
+
+    pub fn insert_text(&self, text: &str) -> Fallible<&Self> {
+        self.parent
+            .call_method(input::methods::InsertText { text })?;
         Ok(self)
     }
 

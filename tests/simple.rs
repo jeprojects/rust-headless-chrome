@@ -817,3 +817,11 @@ fn keyboard() -> Fallible<()> {
     tab.keyboard.up("Alt")?;
     Ok(())
 }
+#[test]
+fn insert_text() -> Fallible<()> {
+    logging::enable_logging();
+    let (_, browser, tab) = dumb_server(include_str!("form.html"));
+    let element = tab.wait_for_element("input#target")?;
+    element.insert_text("mothership")?;
+    Ok(())
+}

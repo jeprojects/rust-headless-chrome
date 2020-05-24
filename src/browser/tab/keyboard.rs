@@ -6,10 +6,10 @@ use crate::browser::transport::{SessionId, Transport};
 use crate::protocol;
 use crate::protocol::input;
 use crate::protocol::types::JsUInt;
+use log::*;
 use std::sync::{Arc, Mutex};
 use std::thread::sleep;
 use std::time::Duration;
-use log::*;
 
 #[derive(Clone)]
 pub struct Keyboard {
