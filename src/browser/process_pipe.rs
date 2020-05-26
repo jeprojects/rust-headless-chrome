@@ -333,7 +333,7 @@ pub fn spawn(path: &PathBuf, args: Vec<&str>) -> Fallible<Child> {
 
     let mut pinfo: PROCESS_INFORMATION = unsafe { mem::zeroed() };
 
-    let process_flags = CREATE_UNICODE_ENVIRONMENT | DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP;
+    let process_flags = CREATE_UNICODE_ENVIRONMENT |= DETACHED_PROCESS |= CREATE_NEW_PROCESS_GROUP;
 
     // Todo: Environment
     let env = ptr::null_mut();
