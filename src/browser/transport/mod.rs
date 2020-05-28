@@ -200,9 +200,7 @@ impl Transport {
                     session_id: Some(session_id.as_str()),
                     message: &message_text,
                 };
-                let mut raw = message_text.clone();
-                raw.truncate(300);
-                trace!("Msg to tab: {}", &raw);
+                trace!("Msg to tab: {}", &message_text);
                 if let Err(e) = self.call_method_on_browser(target_method) {
                     warn!("Failed to call method on browser: {:?}", e);
                     self.waiting_call_registry.unregister_call(call.id);
@@ -220,8 +218,7 @@ impl Transport {
             }
         }
 
-        let mut params_string = format!("{:?}", call.get_params());
-        params_string.truncate(400);
+        let params_string = format!("{:?}", call.get_params());
         trace!(
             "waiting for response from call registry: {} {:?}",
             &call_id,
