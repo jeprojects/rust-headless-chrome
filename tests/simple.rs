@@ -15,7 +15,7 @@ use headless_chrome::protocol::fetch::methods::{FulfilRequest, RequestPattern};
 use headless_chrome::protocol::fetch::HeaderEntry;
 use headless_chrome::protocol::network::{Cookie, CookieParam};
 use headless_chrome::protocol::runtime::methods::{RemoteObjectSubtype, RemoteObjectType};
-use headless_chrome::protocol::RemoteError;
+use headless_chrome::protocol::{dom, page, RemoteError};
 use headless_chrome::util::Wait;
 use headless_chrome::{
     protocol::browser::{Bounds, WindowState},

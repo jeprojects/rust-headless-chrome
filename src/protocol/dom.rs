@@ -134,6 +134,31 @@ pub mod methods {
 
     use crate::protocol::types::{JsFloat, JsInt, JsUInt};
     use crate::protocol::Method;
+    use crate::protocol::dom::NodeId;
+
+    #[derive(Serialize, Debug)]
+    #[serde(rename_all = "camelCase")]
+    pub struct Enable {}
+
+    #[derive(Debug, Deserialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct EnableReturnObject {}
+    impl Method for Enable {
+        const NAME: &'static str = "DOM.enable";
+        type ReturnObject = EnableReturnObject;
+    }
+
+    #[derive(Serialize, Debug)]
+    #[serde(rename_all = "camelCase")]
+    pub struct Disable {}
+
+    #[derive(Debug, Deserialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct DisableReturnObject {}
+    impl Method for Disable {
+        const NAME: &'static str = "DOM.disable";
+        type ReturnObject = DisableReturnObject;
+    }
 
     #[derive(Serialize, Debug)]
     #[serde(rename_all = "camelCase")]
@@ -149,6 +174,40 @@ pub mod methods {
     impl Method for GetDocument {
         const NAME: &'static str = "DOM.getDocument";
         type ReturnObject = GetDocumentReturnObject;
+    }
+
+    #[derive(Serialize, Debug)]
+    #[serde(rename_all = "camelCase")]
+    pub struct GetFlattenedDocument {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub depth: Option<JsInt>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub pierce: Option<bool>,
+    }
+    #[derive(Debug, Deserialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct GetFlattenedDocumentReturnObject {
+        pub nodes: Vec<super::Node>,
+    }
+    impl Method for GetFlattenedDocument {
+        const NAME: &'static str = "DOM.getFlattenedDocument";
+        type ReturnObject = GetFlattenedDocumentReturnObject;
+    }
+
+    #[derive(Serialize, Debug)]
+    #[serde(rename_all = "camelCase")]
+    pub struct GetFrameOwner {
+        pub frame_id: String,
+    }
+    #[derive(Debug, Deserialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct GetFrameOwnerReturnObject {
+        pub node_id: Option<NodeId>,
+        pub backend_node_id: NodeId,
+    }
+    impl Method for GetFrameOwner {
+        const NAME: &'static str = "DOM.getFrameOwner";
+        type ReturnObject = GetFrameOwnerReturnObject;
     }
 
     #[derive(Serialize, Debug)]

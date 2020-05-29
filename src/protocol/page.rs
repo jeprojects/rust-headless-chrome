@@ -116,12 +116,43 @@ pub mod events {
     }
 
     #[derive(Deserialize, Debug, Clone, PartialEq)]
+    pub struct FrameNavigatedWithinDocumentEvent {
+        pub params: FrameNavigatedWithinDocumentParams,
+    }
+    #[derive(Deserialize, Debug, Clone, PartialEq)]
+    #[serde(rename_all = "camelCase")]
+    pub struct FrameNavigatedWithinDocumentParams {
+        pub frame_id: String,
+    }
+
+    #[derive(Deserialize, Debug, Clone, PartialEq)]
     pub struct FrameStoppedLoadingEvent {
         pub params: FrameStoppedLoadingParams,
     }
     #[derive(Deserialize, Debug, Clone, PartialEq)]
     #[serde(rename_all = "camelCase")]
     pub struct FrameStoppedLoadingParams {
+        pub frame_id: String,
+    }
+    #[derive(Deserialize, Debug, Clone, PartialEq)]
+    #[serde(rename_all = "camelCase")]
+    pub struct FrameAttachedEvent {
+        pub params: FrameAttachedParams,
+    }
+    #[derive(Deserialize, Debug, Clone, PartialEq)]
+    #[serde(rename_all = "camelCase")]
+    pub struct FrameAttachedParams {
+        pub frame_id: String,
+        pub parent_frame_id: String,
+    }
+    #[derive(Deserialize, Debug, Clone, PartialEq)]
+    #[serde(rename_all = "camelCase")]
+    pub struct FrameDetachedEvent {
+        pub params: FrameDetachedParams,
+    }
+    #[derive(Deserialize, Debug, Clone, PartialEq)]
+    #[serde(rename_all = "camelCase")]
+    pub struct FrameDetachedParams {
         pub frame_id: String,
     }
 }

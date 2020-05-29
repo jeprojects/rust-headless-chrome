@@ -176,6 +176,7 @@ impl Tab {
         };
 
         tab.call_method(page::methods::Enable {})?;
+        tab.call_method(dom::methods::Enable {})?;
         tab.call_method(page::methods::SetLifecycleEventsEnabled { enabled: true })?;
 
         tab.start_event_handler_thread();
