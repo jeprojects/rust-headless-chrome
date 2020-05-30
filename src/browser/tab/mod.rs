@@ -1074,4 +1074,12 @@ impl Tab {
         self.call_method(SetExtraHTTPHeaders { headers })?;
         Ok(())
     }
+
+    pub fn evaluate_on_new_domain(&self, source: &str) -> Fallible<()> {
+        self.call_method(page::methods::AddScriptToEvaluateOnNewDocument {
+            source,
+            world: None,
+        })?;
+        Ok(())
+    }
 }

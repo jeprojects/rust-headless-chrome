@@ -231,6 +231,22 @@ pub mod methods {
 
     #[derive(Serialize, Debug)]
     #[serde(rename_all = "camelCase")]
+    pub struct AddScriptToEvaluateOnNewDocument<'a> {
+        pub source: &'a str,
+        pub world: Option<&'a str>
+    }
+    #[derive(Debug, Deserialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct AddScriptToEvaluateOnNewDocumentReturnObject {
+        pub identifier: String
+    }
+    impl Method for AddScriptToEvaluateOnNewDocument<'_> {
+        const NAME: &'static str = "Page.addScriptToEvaluateOnNewDocument";
+        type ReturnObject = AddScriptToEvaluateOnNewDocumentReturnObject;
+    }
+
+    #[derive(Serialize, Debug)]
+    #[serde(rename_all = "camelCase")]
     pub struct GetFrameTree {}
 
     #[derive(Debug, Deserialize)]
