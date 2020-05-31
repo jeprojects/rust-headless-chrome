@@ -827,7 +827,7 @@ fn insert_text() -> Fallible<()> {
 }
 
 #[test]
-fn evaluate_on_new_domain() -> Fallible<()> {
+fn evaluate_on_new_document() -> Fallible<()> {
     logging::enable_logging();
     let (_, browser, tab) = dumb_server(include_str!("form.html"));
     let js = r#"() => {
@@ -835,6 +835,6 @@ fn evaluate_on_new_domain() -> Fallible<()> {
         return null
       }
     }"#;
-    tab.evaluate_on_new_domain(js)?;
+    tab.evaluate_on_new_document(js)?;
     Ok(())
 }

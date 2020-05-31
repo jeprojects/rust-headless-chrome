@@ -132,9 +132,9 @@ impl<'a, F: FnMut(&Node) -> bool> SearchVisitor<'a, F> {
 pub mod methods {
     use serde::{Deserialize, Serialize};
 
+    use crate::protocol::dom::NodeId;
     use crate::protocol::types::{JsFloat, JsInt, JsUInt};
     use crate::protocol::Method;
-    use crate::protocol::dom::NodeId;
 
     #[derive(Serialize, Debug)]
     #[serde(rename_all = "camelCase")]

@@ -1075,7 +1075,7 @@ impl Tab {
         Ok(())
     }
 
-    pub fn evaluate_on_new_domain(&self, source: &str) -> Fallible<()> {
+    pub fn evaluate_on_new_document(&self, source: &str) -> Fallible<()> {
         self.call_method(page::methods::AddScriptToEvaluateOnNewDocument {
             source,
             world: None,

@@ -233,12 +233,12 @@ pub mod methods {
     #[serde(rename_all = "camelCase")]
     pub struct AddScriptToEvaluateOnNewDocument<'a> {
         pub source: &'a str,
-        pub world: Option<&'a str>
+        pub world: Option<&'a str>,
     }
     #[derive(Debug, Deserialize)]
     #[serde(rename_all = "camelCase")]
     pub struct AddScriptToEvaluateOnNewDocumentReturnObject {
-        pub identifier: String
+        pub identifier: String,
     }
     impl Method for AddScriptToEvaluateOnNewDocument<'_> {
         const NAME: &'static str = "Page.addScriptToEvaluateOnNewDocument";
