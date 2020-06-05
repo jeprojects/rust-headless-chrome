@@ -14,7 +14,7 @@ use std::time::Duration;
 #[derive(Clone)]
 pub struct Keyboard {
     pressed_keys: Arc<Mutex<HashSet<String>>>,
-    modifiers: Arc<Mutex<u32>>,
+    pub modifiers: Arc<Mutex<u32>>,
     transport: Arc<Transport>,
     session_id: SessionId,
 }

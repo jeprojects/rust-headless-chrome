@@ -16,15 +16,17 @@ use crate::protocol::page::methods::{
 };
 use crate::protocol::target::{TargetId, TargetInfo};
 use crate::protocol::{
-    dom, fetch, input, logs, network, page, profiler, runtime, target, Event, RemoteError,
+    dom, fetch, logs, network, page, profiler, runtime, target, Event, RemoteError,
 };
 use crate::{protocol, protocol::logs::methods::ViolationSetting, util};
 
 use super::transport::SessionId;
 use crate::browser::tab::keyboard::Keyboard;
+use crate::browser::tab::mouse::Mouse;
 use crate::browser::transport::Transport;
 use crate::protocol::fetch::events::RequestPausedEvent;
 use crate::protocol::fetch::methods::{AuthChallengeResponse, ContinueRequest};
+use crate::protocol::input::MouseButton;
 use crate::protocol::network::methods::SetExtraHTTPHeaders;
 use crate::protocol::network::{Cookie, CookieParam};
 use std::collections::HashMap;
@@ -33,6 +35,7 @@ use std::thread::sleep;
 pub mod element;
 pub mod keyboard;
 mod keys;
+pub mod mouse;
 mod point;
 
 #[derive(Debug)]
@@ -106,6 +109,7 @@ pub struct Tab {
     event_listeners: Arc<Mutex<Vec<Arc<SyncSendEvent>>>>,
     slow_motion_multiplier: Arc<RwLock<f64>>, // there's no AtomicF64, otherwise would use that
     pub keyboard: Keyboard,
+    pub mouse: Mouse,
 }
 
 #[derive(Debug, Fail)]
@@ -154,6 +158,11 @@ impl Tab {
         let target_info_mutex = Arc::new(Mutex::new(target_info));
 
         let keyboard = Keyboard::new(Arc::clone(&transport), session_id.clone());
+        let mouse = Mouse::new(
+            Arc::clone(&keyboard.modifiers),
+            Arc::clone(&transport),
+            session_id.clone(),
+        );
 
         let tab = Self {
             target_id,
@@ -173,6 +182,7 @@ impl Tab {
             event_listeners: Arc::new(Mutex::new(Vec::new())),
             slow_motion_multiplier: Arc::new(RwLock::new(0.0)),
             keyboard,
+            mouse,
         };
 
         tab.call_method(page::methods::Enable {})?;
@@ -553,46 +563,24 @@ impl Tab {
     }
 
     /// Moves the mouse to this point (dispatches a mouseMoved event)
+    #[deprecated(since = "0.9.1", note = "Please use the keyboard function instead")]
     pub fn move_mouse_to_point(&self, point: Point) -> Fallible<&Self> {
         if point.x == 0.0 && point.y == 0.0 {
             warn!("Midpoint of element shouldn't be 0,0. Something is probably wrong.")
         }
-
         self.optional_slow_motion_sleep(100);
-
-        self.call_method(input::methods::DispatchMouseEvent {
-            event_type: "mouseMoved",
-            x: point.x,
-            y: point.y,
-            ..Default::default()
-        })?;
-
+        self.mouse.mouse_move(point.x, point.y, 1)?;
         Ok(self)
     }
 
-    pub fn click_point(&self, point: Point, click_count: u32) -> Fallible<&Self> {
+    #[deprecated(since = "0.9.1", note = "Please use the mouse function instead")]
+    pub fn click_point(&self, point: Point, click_count: usize) -> Fallible<&Self> {
         trace!("Clicking point: {:?}", point);
         if point.x == 0.0 && point.y == 0.0 {
             warn!("Midpoint of element shouldn't be 0,0. Something is probably wrong.")
         }
-
-        self.move_mouse_to_point(point)?;
-
-        self.optional_slow_motion_sleep(250);
-        self.call_method(input::methods::DispatchMouseEvent {
-            event_type: "mousePressed",
-            x: point.x,
-            y: point.y,
-            button: Some("left"),
-            click_count: Some(click_count),
-        })?;
-        self.call_method(input::methods::DispatchMouseEvent {
-            event_type: "mouseReleased",
-            x: point.x,
-            y: point.y,
-            button: Some("left"),
-            click_count: Some(1),
-        })?;
+        self.mouse
+            .click(point.x, point.y, MouseButton::Left, click_count, 250)?;
         Ok(self)
     }
 

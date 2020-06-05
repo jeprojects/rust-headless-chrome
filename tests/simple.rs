@@ -23,6 +23,7 @@ use headless_chrome::{
     Browser, Tab,
 };
 use std::collections::HashMap;
+use headless_chrome::protocol::input::MouseButton;
 
 pub mod logging;
 pub mod server;
@@ -159,13 +160,13 @@ fn form_interaction() -> Fallible<()> {
     let (_, browser, tab) = dumb_server(include_str!("form.html"));
     tab.wait_for_element("input#target")?
         .type_into("mothership")?;
-    tab.wait_for_element("button")?.click(1)?;
+    tab.wait_for_element("button")?.click(MouseButton::Left, 1)?;
     let d = tab.wait_for_element("div#protocol")?.get_description()?;
     assert!(d
         .find(|n| n.node_value == "Missiles launched against mothership")
         .is_some());
-    tab.wait_for_element("input#sneakattack")?.click(1)?;
-    tab.wait_for_element("button")?.click(1)?;
+    tab.wait_for_element("input#sneakattack")?.click(MouseButton::Left,1)?;
+    tab.wait_for_element("button")?.click(MouseButton::Left,1)?;
     let d = tab.wait_for_element("div#protocol")?.get_description()?;
     assert!(d
         .find(|n| n.node_value == "Comrades, have a nice day!")
@@ -808,13 +809,27 @@ fn keyboard() -> Fallible<()> {
     let (_, browser, tab) = dumb_server(include_str!("form.html"));
     let element = tab.wait_for_element("input#target")?;
     element.type_into("mothership")?;
-    element.click(1)?;
+    element.click(MouseButton::Left, 1)?;
     tab.keyboard.type_str("This is a test")?;
     tab.keyboard.down("Shift")?;
     tab.keyboard.down("Alt")?;
     tab.keyboard.press("Z", Some(100))?;
     tab.keyboard.up("Shift")?;
     tab.keyboard.up("Alt")?;
+    Ok(())
+}
+#[test]
+fn mouse() -> Fallible<()> {
+    logging::enable_logging();
+    let (_, browser, tab) = dumb_server(include_str!("form.html"));
+    tab.wait_for_element("input#target")?
+        .type_into("mothership")?;
+    let midpoint = tab.wait_for_element("button")?.get_midpoint()?;
+    tab.mouse.click(midpoint.x, midpoint.y, MouseButton::Left, 1, 100)?;
+    let d = tab.wait_for_element("div#protocol")?.get_description()?;
+    assert!(d
+        .find(|n| n.node_value == "Missiles launched against mothership")
+        .is_some());
     Ok(())
 }
 #[test]

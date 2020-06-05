@@ -1,6 +1,9 @@
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
+
 pub mod methods {
     use serde::{Deserialize, Serialize};
 
+    use crate::protocol::input::MouseButton;
     use crate::protocol::types::{JsFloat, JsUInt};
     use crate::protocol::Method;
 
@@ -12,7 +15,9 @@ pub mod methods {
         pub x: JsFloat,
         pub y: JsFloat,
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub button: Option<&'a str>,
+        pub modifiers: Option<JsUInt>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub button: Option<MouseButton>,
         #[serde(skip_serializing_if = "Option::is_none")]
         pub click_count: Option<JsUInt>,
     }
@@ -22,6 +27,7 @@ pub mod methods {
                 event_type: "mouseMoved",
                 x: 0.0,
                 y: 0.0,
+                modifiers: None,
                 button: None,
                 click_count: None,
             }
@@ -77,5 +83,40 @@ pub mod methods {
     impl<'a> Method for InsertText<'a> {
         const NAME: &'static str = "Input.insertText";
         type ReturnObject = InsertTextReturnObject;
+    }
+}
+
+#[derive(Clone, Debug)]
+pub enum MouseButton {
+    Left,
+    Middle,
+    Right,
+}
+
+impl Serialize for MouseButton {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(match *self {
+            MouseButton::Left => "left",
+            MouseButton::Middle => "middle",
+            MouseButton::Right => "right",
+        })
+    }
+}
+
+impl<'de> Deserialize<'de> for MouseButton {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        Ok(match s.as_str() {
+            "left" => MouseButton::Left,
+            "middle" => MouseButton::Middle,
+            "right" => MouseButton::Right,
+            _ => MouseButton::Left,
+        })
     }
 }

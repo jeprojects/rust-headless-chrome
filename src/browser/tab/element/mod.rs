@@ -12,6 +12,7 @@ use crate::protocol::{dom, input};
 
 mod box_model;
 
+use crate::protocol::input::MouseButton;
 use crate::protocol::runtime::methods::RemoteObjectType;
 pub use box_model::{BoxModel, ElementQuad};
 
@@ -70,20 +71,22 @@ impl<'a> Element<'a> {
     pub fn move_mouse_over(&self) -> Fallible<&Self> {
         self.scroll_into_view()?;
         let midpoint = self.get_midpoint()?;
-        self.parent.move_mouse_to_point(midpoint)?;
+        self.parent.mouse.mouse_move(midpoint.x, midpoint.y, 1)?;
         Ok(self)
     }
 
-    pub fn click(&self, click_count: u32) -> Fallible<&Self> {
+    pub fn click(&self, button: MouseButton, click_count: usize) -> Fallible<&Self> {
         self.scroll_into_view()?;
         debug!("Clicking element {:?}", &self);
         let midpoint = self.get_midpoint()?;
-        self.parent.click_point(midpoint, click_count)?;
+        self.parent
+            .mouse
+            .click(midpoint.x, midpoint.y, button, click_count, 250)?;
         Ok(self)
     }
 
     pub fn type_into(&self, text: &str) -> Fallible<&Self> {
-        self.click(1)?;
+        self.click(MouseButton::Left, 1)?;
 
         debug!("Typing into element ( {:?} ): {}", &self, text);
 
@@ -93,7 +96,7 @@ impl<'a> Element<'a> {
     }
 
     pub fn insert_text(&self, text: &str) -> Fallible<&Self> {
-        self.click(1)?;
+        self.click(MouseButton::Left, 1)?;
         debug!("Inserting text into element ( {:?} ): {}", &self, text);
         self.parent
             .call_method(input::methods::InsertText { text })?;
