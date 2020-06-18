@@ -16,7 +16,7 @@ use crate::protocol::page::methods::{
 };
 use crate::protocol::target::{TargetId, TargetInfo};
 use crate::protocol::{
-    dom, fetch, logs, network, page, profiler, runtime, target, Event, RemoteError,
+    dom, emulation, fetch, logs, network, page, profiler, runtime, target, Event, RemoteError,
 };
 use crate::{protocol, protocol::logs::methods::ViolationSetting, util};
 
@@ -29,6 +29,7 @@ use crate::protocol::fetch::methods::{AuthChallengeResponse, ContinueRequest};
 use crate::protocol::input::MouseButton;
 use crate::protocol::network::methods::SetExtraHTTPHeaders;
 use crate::protocol::network::{Cookie, CookieParam};
+use crate::protocol::page::Viewport;
 use std::collections::HashMap;
 use std::thread::sleep;
 
@@ -1067,6 +1068,19 @@ impl Tab {
         self.call_method(page::methods::AddScriptToEvaluateOnNewDocument {
             source,
             world: None,
+        })?;
+        Ok(())
+    }
+    pub fn set_viewport(&self, viewport: Viewport) -> Fallible<()> {
+        let width = viewport.width;
+        let height = viewport.height;
+        let device_scale_factor = viewport.scale;
+        self.call_method(emulation::methods::SetDeviceMetricsOverride {
+            width,
+            height,
+            device_scale_factor,
+            mobile: false,
+            ..Default::default()
         })?;
         Ok(())
     }

@@ -13,7 +13,9 @@ use headless_chrome::browser::transport::{SessionId, Transport};
 use headless_chrome::protocol::fetch::events::RequestPausedEvent;
 use headless_chrome::protocol::fetch::methods::{FulfilRequest, RequestPattern};
 use headless_chrome::protocol::fetch::HeaderEntry;
+use headless_chrome::protocol::input::MouseButton;
 use headless_chrome::protocol::network::{Cookie, CookieParam};
+use headless_chrome::protocol::page::Viewport;
 use headless_chrome::protocol::runtime::methods::{RemoteObjectSubtype, RemoteObjectType};
 use headless_chrome::protocol::{dom, page, RemoteError};
 use headless_chrome::util::Wait;
@@ -23,7 +25,6 @@ use headless_chrome::{
     Browser, Tab,
 };
 use std::collections::HashMap;
-use headless_chrome::protocol::input::MouseButton;
 use std::thread;
 
 pub mod logging;
@@ -161,13 +162,16 @@ fn form_interaction() -> Fallible<()> {
     let (_, browser, tab) = dumb_server(include_str!("form.html"));
     tab.wait_for_element("input#target")?
         .type_into("mothership")?;
-    tab.wait_for_element("button")?.click(MouseButton::Left, 1)?;
+    tab.wait_for_element("button")?
+        .click(MouseButton::Left, 1)?;
     let d = tab.wait_for_element("div#protocol")?.get_description()?;
     assert!(d
         .find(|n| n.node_value == "Missiles launched against mothership")
         .is_some());
-    tab.wait_for_element("input#sneakattack")?.click(MouseButton::Left,1)?;
-    tab.wait_for_element("button")?.click(MouseButton::Left,1)?;
+    tab.wait_for_element("input#sneakattack")?
+        .click(MouseButton::Left, 1)?;
+    tab.wait_for_element("button")?
+        .click(MouseButton::Left, 1)?;
     let d = tab.wait_for_element("div#protocol")?.get_description()?;
     assert!(d
         .find(|n| n.node_value == "Comrades, have a nice day!")
@@ -826,7 +830,8 @@ fn mouse() -> Fallible<()> {
     tab.wait_for_element("input#target")?
         .type_into("mothership")?;
     let midpoint = tab.wait_for_element("button")?.get_midpoint()?;
-    tab.mouse.click(midpoint.x, midpoint.y, MouseButton::Left, 1, 100)?;
+    tab.mouse
+        .click(midpoint.x, midpoint.y, MouseButton::Left, 1, 100)?;
     let d = tab.wait_for_element("div#protocol")?.get_description()?;
     assert!(d
         .find(|n| n.node_value == "Missiles launched against mothership")
@@ -855,70 +860,17 @@ fn evaluate_on_new_document() -> Fallible<()> {
     Ok(())
 }
 
-pub static DEBUG_MOUSE: &str = r#"
-    // Install mouse helper only for top-level frame.
-    if (window !== window.parent) {
+#[test]
+fn set_viewport() -> Fallible<()> {
+    logging::enable_logging();
+    let (_, browser, tab) = dumb_server(include_str!("form.html"));
+    let tab = browser.wait_for_initial_tab()?;
 
-    } else {
-    window.addEventListener('DOMContentLoaded', () => {
-      const box = document.createElement('puppeteer-mouse-pointer');
-      const styleElement = document.createElement('style');
-      styleElement.innerHTML = `
-        puppeteer-mouse-pointer {
-          pointer-events: none;
-          position: absolute;
-          top: 0;
-          z-index: 10000;
-          left: 0;
-          width: 20px;
-          height: 20px;
-          background: rgba(0,0,0,.4);
-          border: 1px solid white;
-          border-radius: 10px;
-          margin: -10px 0 0 -10px;
-          padding: 0;
-          transition: background .2s, border-radius .2s, border-color .2s;
-        }
-        puppeteer-mouse-pointer.button-1 {
-          transition: none;
-          background: rgba(0,0,0,0.9);
-        }
-        puppeteer-mouse-pointer.button-2 {
-          transition: none;
-          border-color: rgba(0,0,255,0.9);
-        }
-        puppeteer-mouse-pointer.button-3 {
-          transition: none;
-          border-radius: 4px;
-        }
-        puppeteer-mouse-pointer.button-4 {
-          transition: none;
-          border-color: rgba(255,0,0,0.9);
-        }
-        puppeteer-mouse-pointer.button-5 {
-          transition: none;
-          border-color: rgba(0,255,0,0.9);
-        }
-      `;
-      document.head.appendChild(styleElement);
-      document.body.appendChild(box);
-      document.addEventListener('mousemove', event => {
-        box.style.left = event.pageX + 'px';
-        box.style.top = event.pageY + 'px';
-        updateButtons(event.buttons);
-      }, true);
-      document.addEventListener('mousedown', event => {
-        updateButtons(event.buttons);
-        box.classList.add('button-' + event.which);
-      }, true);
-      document.addEventListener('mouseup', event => {
-        updateButtons(event.buttons);
-        box.classList.remove('button-' + event.which);
-      }, true);
-      function updateButtons(buttons) {
-        for (let i = 0; i < 5; i++)
-          box.classList.toggle('button-' + i, buttons & (1 << i));
-      }
-    }, false);
-  }
-"#;
+    tab.set_viewport(Viewport {
+        x: 0.0,
+        y: 0.0,
+        width: 1920.0,
+        height: 1080.0,
+        scale: 1.0,
+    })
+}

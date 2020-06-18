@@ -37,11 +37,11 @@ impl Mouse {
         let mut from_x = self.x.lock().unwrap();
         let mut from_y = self.y.lock().unwrap();
         let mouse_button = self.button.lock().unwrap();
-        for step in 1..steps+1 {
+        for step in 1..steps + 1 {
             let method = input::methods::DispatchMouseEvent {
                 event_type: "mouseMoved",
-                x: *from_x + (x - *from_x) * (step as JsFloat / steps as JsFloat ) as JsFloat,
-                y: *from_y + (y - *from_y) * (step as JsFloat / steps as JsFloat ) as JsFloat,
+                x: *from_x + (x - *from_x) * (step as JsFloat / steps as JsFloat) as JsFloat,
+                y: *from_y + (y - *from_y) * (step as JsFloat / steps as JsFloat) as JsFloat,
                 modifiers: Some(*self.keyboard_modifiers.lock().unwrap()),
                 button: mouse_button.clone(),
                 click_count: None,
