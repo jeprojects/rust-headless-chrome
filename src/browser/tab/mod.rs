@@ -30,6 +30,7 @@ use crate::protocol::input::MouseButton;
 use crate::protocol::network::methods::SetExtraHTTPHeaders;
 use crate::protocol::network::{Cookie, CookieParam};
 use crate::protocol::page::Viewport;
+use crate::protocol::types::{JsInt, JsUInt};
 use std::collections::HashMap;
 use std::thread::sleep;
 
@@ -1072,9 +1073,9 @@ impl Tab {
         Ok(())
     }
     pub fn set_viewport(&self, viewport: Viewport) -> Fallible<()> {
-        let width = viewport.width;
-        let height = viewport.height;
-        let device_scale_factor = viewport.scale;
+        let width = viewport.width.round() as JsUInt;
+        let height = viewport.height.round() as JsUInt;
+        let device_scale_factor = viewport.scale.round() as JsUInt;
         self.call_method(emulation::methods::SetDeviceMetricsOverride {
             width,
             height,

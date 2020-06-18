@@ -11,27 +11,27 @@ pub struct ScreenOrientation<'a> {
 
 pub mod methods {
     use crate::protocol::page::Viewport;
-    use crate::protocol::types::JsFloat;
+    use crate::protocol::types::JsUInt;
     use crate::protocol::Method;
     use serde::{Deserialize, Serialize};
 
     #[derive(Serialize, Debug, Default)]
     #[serde(rename_all = "camelCase")]
     pub struct SetDeviceMetricsOverride<'a> {
-        pub width: JsFloat,
-        pub height: JsFloat,
-        pub device_scale_factor: JsFloat,
+        pub width: JsUInt,
+        pub height: JsUInt,
+        pub device_scale_factor: JsUInt,
         pub mobile: bool,
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub scale: Option<JsFloat>,
+        pub scale: Option<JsUInt>,
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub screen_width: Option<JsFloat>,
+        pub screen_width: Option<JsUInt>,
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub screen_height: Option<JsFloat>,
+        pub screen_height: Option<JsUInt>,
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub position_x: Option<JsFloat>,
+        pub position_x: Option<JsUInt>,
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub position_y: Option<JsFloat>,
+        pub position_y: Option<JsUInt>,
         #[serde(skip_serializing_if = "Option::is_none")]
         pub dont_set_visible_size: Option<bool>,
         #[serde(skip_serializing_if = "Option::is_none")]
