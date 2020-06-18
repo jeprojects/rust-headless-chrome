@@ -131,7 +131,7 @@ impl Process {
             args.extend(extra_args);
         }
 
-        if !window_size_option.is_empty() {
+        if !window_size_option.is_empty() && launch_options.headless {
             args.extend(&[window_size_option.as_str()]);
         }
 
