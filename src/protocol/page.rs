@@ -268,6 +268,24 @@ pub mod methods {
 
     #[derive(Serialize, Debug)]
     #[serde(rename_all = "camelCase")]
+    pub struct GetResourceContent<'a> {
+        pub frame_id: &'a str,
+        pub url: &'a str,
+    }
+
+    #[derive(Debug, Deserialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct GetResourceContentReturnObject {
+        pub content: String,
+        pub base64_encoded: bool,
+    }
+    impl Method for GetResourceContent {
+        const NAME: &'static str = "Page.getResourceContent";
+        type ReturnObject = GetResourceContentReturnObject;
+    }
+
+    #[derive(Serialize, Debug)]
+    #[serde(rename_all = "camelCase")]
     pub struct Navigate<'a> {
         pub url: &'a str,
     }
