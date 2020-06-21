@@ -279,7 +279,7 @@ pub mod methods {
         pub content: String,
         pub base64_encoded: bool,
     }
-    impl Method for GetResourceContent {
+    impl Method for GetResourceContent<'_> {
         const NAME: &'static str = "Page.getResourceContent";
         type ReturnObject = GetResourceContentReturnObject;
     }
