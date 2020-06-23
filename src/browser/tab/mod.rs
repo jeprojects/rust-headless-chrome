@@ -1050,6 +1050,7 @@ impl Tab {
     /// Supports selecting files or closing the file chooser dialog.
     ///
     /// NOTE: the filepaths listed in `files` must be absolute.
+    #[deprecated(since = "0.9.1", note = "Does not support chrome/chromium 80 and above")]
     pub fn handle_file_chooser(
         &self,
         action: FileChooserAction,

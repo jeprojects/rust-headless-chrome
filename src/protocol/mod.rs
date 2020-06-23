@@ -130,6 +130,8 @@ pub enum Event {
     LogEntryAdded(logs::events::EntryAddedEvent),
     #[serde(rename = "Runtime.exceptionThrown")]
     RuntimeExceptionThrown(runtime::events::ExceptionThrownEvent),
+    #[serde(rename = "Page.fileChooserOpened")]
+    Runtime(page::events::FileChooserOpened),
 }
 
 #[derive(Deserialize, Debug, Clone)]
