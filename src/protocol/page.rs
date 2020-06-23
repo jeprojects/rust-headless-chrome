@@ -167,9 +167,9 @@ pub mod events {
     #[derive(Deserialize, Debug, Clone, PartialEq)]
     #[serde(rename_all = "camelCase")]
     pub struct FileChooserOpened {
-        frame_id: String,
-        backend_node_id: JsInt,
-        mode: FileChooserMode,
+        pub frame_id: String,
+        pub backend_node_id: JsInt,
+        pub mode: FileChooserMode,
     }
 }
 
