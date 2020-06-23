@@ -79,7 +79,7 @@ pub struct PrintToPdfOptions {
     pub prefer_css_page_size: Option<bool>,
 }
 
-#[derive(Serialize, Debug)]
+#[derive(Deserialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub enum FileChooserMode {
     SelectSingle,
