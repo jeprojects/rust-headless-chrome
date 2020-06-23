@@ -25,6 +25,7 @@ use headless_chrome::{
     Browser, Tab,
 };
 use std::collections::HashMap;
+use std::path::PathBuf;
 use std::thread;
 
 pub mod logging;

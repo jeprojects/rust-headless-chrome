@@ -336,7 +336,6 @@ impl Tab {
                         }
                     }
                     Event::FileChooserOpened(file) => {
-                        println!("{:#?}", file);
                         let files = file_handler.lock().unwrap();
                         let files: Vec<PathBuf> = (*files.clone()).to_owned();
                         let files: Vec<&str> = files
