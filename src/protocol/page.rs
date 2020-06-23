@@ -90,6 +90,7 @@ pub mod events {
     use serde::Deserialize;
     use crate::protocol::types::JsInt;
     use crate::protocol::page::FileChooserMode;
+    use crate::protocol::dom::NodeId;
 
     #[derive(Deserialize, Debug, Clone, PartialEq)]
     pub struct LifecycleEvent {
@@ -168,7 +169,7 @@ pub mod events {
     #[serde(rename_all = "camelCase")]
     pub struct FileChooserOpened {
         pub frame_id: String,
-        pub backend_node_id: JsInt,
+        pub backend_node_id: NodeId,
         pub mode: FileChooserMode,
     }
 }
