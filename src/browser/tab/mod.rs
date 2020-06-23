@@ -1092,8 +1092,7 @@ impl Tab {
     /// This sets the files to upload when a FileChooserOpened event is received after enabling
     /// set_file_chooser_dialog_interception()
     pub fn set_files(&self, files: &[PathBuf]) -> Fallible<()> {
-        let mut files_handler = &mut *self.file_handler.lock().unwrap();
-        files_handler.extend_from_slice(files);
+        *self.file_handler.lock().unwrap() = files.to_vec();
         Ok(())
     }
     pub fn set_extra_http_headers(&self, headers: HashMap<&str, &str>) -> Fallible<()> {
