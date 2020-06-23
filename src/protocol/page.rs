@@ -87,10 +87,10 @@ pub enum FileChooserMode {
 }
 
 pub mod events {
-    use serde::Deserialize;
-    use crate::protocol::types::JsInt;
-    use crate::protocol::page::FileChooserMode;
     use crate::protocol::dom::NodeId;
+    use crate::protocol::page::FileChooserMode;
+    use crate::protocol::types::JsInt;
+    use serde::Deserialize;
 
     #[derive(Deserialize, Debug, Clone, PartialEq)]
     pub struct LifecycleEvent {
@@ -164,6 +164,11 @@ pub mod events {
     #[serde(rename_all = "camelCase")]
     pub struct FrameDetachedParams {
         pub frame_id: String,
+    }
+    #[derive(Deserialize, Debug, Clone, PartialEq)]
+    #[serde(rename_all = "camelCase")]
+    pub struct FileChooserOpenedEvent {
+        pub params: FileChooserOpened,
     }
     #[derive(Deserialize, Debug, Clone, PartialEq)]
     #[serde(rename_all = "camelCase")]
@@ -356,7 +361,10 @@ pub mod methods {
 
     #[derive(Serialize, Debug)]
     #[serde(rename_all = "lowercase")]
-    #[deprecated(since = "0.9.1", note = "Does not support chrome/chromium 80 and above")]
+    #[deprecated(
+        since = "0.9.1",
+        note = "Does not support chrome/chromium 80 and above"
+    )]
     pub enum FileChooserAction {
         Accept,
         Cancel,
@@ -364,7 +372,10 @@ pub mod methods {
     }
     #[derive(Serialize, Debug)]
     #[serde(rename_all = "camelCase")]
-    #[deprecated(since = "0.9.1", note = "Does not support chrome/chromium 80 and above")]
+    #[deprecated(
+        since = "0.9.1",
+        note = "Does not support chrome/chromium 80 and above"
+    )]
     pub struct HandleFileChooser {
         pub action: FileChooserAction,
         #[serde(skip_serializing_if = "Option::is_none")]
@@ -372,7 +383,10 @@ pub mod methods {
     }
     #[derive(Debug, Deserialize)]
     #[serde(rename_all = "camelCase")]
-    #[deprecated(since = "0.9.1", note = "Does not support chrome/chromium 80 and above")]
+    #[deprecated(
+        since = "0.9.1",
+        note = "Does not support chrome/chromium 80 and above"
+    )]
     pub struct HandleFileChooserReturnObject {}
     impl Method for HandleFileChooser {
         const NAME: &'static str = "Page.handleFileChooser";

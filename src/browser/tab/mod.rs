@@ -32,6 +32,7 @@ use crate::protocol::network::{Cookie, CookieParam};
 use crate::protocol::page::Viewport;
 use crate::protocol::types::{JsInt, JsUInt};
 use std::collections::HashMap;
+use std::path::{Path, PathBuf};
 use std::thread::sleep;
 
 pub mod element;
@@ -107,6 +108,7 @@ pub struct Tab {
     request_interceptor: Arc<Mutex<Arc<RequestIntercept>>>,
     response_handler: Arc<Mutex<Option<ResponseHandler>>>,
     auth_handler: Arc<Mutex<fetch::methods::AuthChallengeResponse>>,
+    file_handler: Arc<Mutex<Vec<PathBuf>>>,
     default_timeout: Arc<RwLock<Duration>>,
     event_listeners: Arc<Mutex<Vec<Arc<SyncSendEvent>>>>,
     slow_motion_multiplier: Arc<RwLock<f64>>, // there's no AtomicF64, otherwise would use that
@@ -180,6 +182,7 @@ impl Tab {
                 response: "Default".to_string(),
                 ..Default::default()
             })),
+            file_handler: Arc::new(Mutex::new(vec![])),
             default_timeout: Arc::new(RwLock::new(Duration::from_secs(3))),
             event_listeners: Arc::new(Mutex::new(Vec::new())),
             slow_motion_multiplier: Arc::new(RwLock::new(0.0)),
@@ -247,6 +250,7 @@ impl Tab {
         let interceptor_mutex = Arc::clone(&self.request_interceptor);
         let response_handler_mutex = self.response_handler.clone();
         let auth_handler_mutex = self.auth_handler.clone();
+        let file_handler = self.file_handler.clone();
         let session_id = self.session_id.clone();
         let listeners_mutex = Arc::clone(&self.event_listeners);
 
@@ -256,7 +260,6 @@ impl Tab {
                 listeners.iter().for_each(|listener| {
                     listener.on_event(&event);
                 });
-
                 match event {
                     Event::Lifecycle(lifecycle_event) => {
                         let event_name = lifecycle_event.params.name.as_ref();
@@ -330,6 +333,30 @@ impl Tab {
                                 transport.call_method_on_target(session_id.clone(), method)
                             };
                             handler(ev.params, &retrieve_body);
+                        }
+                    }
+                    Event::FileChooserOpened(file) => {
+                        println!("{:#?}", file);
+                        let files = file_handler.lock().unwrap();
+                        let files: Vec<PathBuf> = (*files.clone()).to_owned();
+                        let files: Vec<&str> = files
+                            .iter()
+                            .filter(|f| f.exists())
+                            .filter_map(|f| f.to_str())
+                            .collect();
+                        if !files.is_empty() {
+                            let method = dom::methods::SetFileInputFiles {
+                                files: &files,
+                                node_id: None,
+                                backend_node_id: Some(file.params.backend_node_id),
+                                object_id: None,
+                            };
+                            let result =
+                                transport.call_method_on_target(session_id.clone(), method);
+
+                            if let Err(e) = result {
+                                warn!("Tried to handle file choose dialog but failed: {}", e);
+                            }
                         }
                     }
                     _ => {
@@ -1050,7 +1077,10 @@ impl Tab {
     /// Supports selecting files or closing the file chooser dialog.
     ///
     /// NOTE: the filepaths listed in `files` must be absolute.
-    #[deprecated(since = "0.9.1", note = "Does not support chrome/chromium 80 and above")]
+    #[deprecated(
+        since = "0.9.1",
+        note = "Does not support chrome/chromium 80 and above"
+    )]
     pub fn handle_file_chooser(
         &self,
         action: FileChooserAction,
@@ -1059,13 +1089,18 @@ impl Tab {
         self.call_method(HandleFileChooser { action, files })?;
         Ok(())
     }
-
+    /// This sets the files to upload when a FileChooserOpened event is received after enabling
+    /// set_file_chooser_dialog_interception()
+    pub fn set_files(&self, files: &[PathBuf]) -> Fallible<()> {
+        let mut files_handler = &mut *self.file_handler.lock().unwrap();
+        files_handler.extend_from_slice(files);
+        Ok(())
+    }
     pub fn set_extra_http_headers(&self, headers: HashMap<&str, &str>) -> Fallible<()> {
         self.call_method(network::methods::Enable {})?;
         self.call_method(SetExtraHTTPHeaders { headers })?;
         Ok(())
     }
-
     pub fn evaluate_on_new_document(&self, source: &str) -> Fallible<()> {
         self.call_method(page::methods::AddScriptToEvaluateOnNewDocument {
             source,
