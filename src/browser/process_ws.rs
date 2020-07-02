@@ -24,10 +24,12 @@ use super::fetcher::{Fetcher, FetcherOptions};
 use crate::browser::default_executable;
 use crate::browser::launch_options::{LaunchOptions, DEFAULT_ARGS};
 use crate::util;
+use tempfile::TempDir;
 
 pub struct Process {
     child_process: TemporaryProcess,
     pub debug_ws_url: String,
+    user_data_dir: TempDir,
 }
 
 #[derive(Debug, Fail)]
@@ -72,7 +74,13 @@ impl Process {
             }
         }
 
-        let mut process = Self::start_process(&launch_options)?;
+        // NOTE: picking random data dir so that each a new browser instance is launched
+        // (see man google-chrome)
+        let user_data_dir = ::tempfile::Builder::new()
+            .prefix("rhc-profile")
+            .tempdir()?;
+
+        let mut process = Self::start_process(&launch_options, &user_data_dir)?;
 
         info!("Started Chrome. PID: {}", process.0.id());
 
@@ -92,7 +100,7 @@ impl Process {
                 Err(error) => {
                     trace!("Problem getting WebSocket URL from Chrome: {}", error);
                     if launch_options.port.is_none() {
-                        process = Self::start_process(&launch_options)?;
+                        process = Self::start_process(&launch_options, &user_data_dir)?;
                     } else {
                         return Err(error);
                     }
@@ -109,10 +117,14 @@ impl Process {
         Ok(Self {
             child_process: process,
             debug_ws_url: url,
+            user_data_dir,
         })
     }
 
-    fn start_process(launch_options: &LaunchOptions) -> Fallible<TemporaryProcess> {
+    fn start_process(
+        launch_options: &LaunchOptions,
+        user_data_dir: &TempDir,
+    ) -> Fallible<TemporaryProcess> {
         let debug_port = if let Some(port) = launch_options.port {
             port
         } else {
@@ -126,11 +138,6 @@ impl Process {
             String::from("")
         };
 
-        // NOTE: picking random data dir so that each a new browser instance is launched
-        // (see man google-chrome)
-        let user_data_dir = ::tempfile::Builder::new()
-            .prefix("rust-headless-chrome-profile")
-            .tempdir()?;
         let data_dir_option = format!("--user-data-dir={}", user_data_dir.path().to_str().unwrap());
 
         trace!("Chrome will have profile: {}", data_dir_option);

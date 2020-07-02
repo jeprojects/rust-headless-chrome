@@ -4,6 +4,7 @@ use crate::browser::launch_options::{LaunchOptions, DEFAULT_ARGS};
 use failure::{format_err, Fallible};
 use log::{info, trace};
 use std::path::PathBuf;
+use tempfile::TempDir;
 
 //Todo: Send proper error if chrome binary not found
 
@@ -70,6 +71,7 @@ use winreg::RegKey;
 
 pub struct Process {
     pub child_process: Child,
+    user_data_dir: TempDir,
 }
 
 impl Process {
@@ -86,25 +88,25 @@ impl Process {
             }
         }
 
-        let process: Child = Self::start_process(&launch_options)?;
+        // NOTE: picking random data dir so that each a new browser instance is launched
+        // (see man google-chrome)
+        let user_data_dir = ::tempfile::Builder::new().prefix("rhc-profile").tempdir()?;
+
+        let process: Child = Self::start_process(&launch_options, &user_data_dir)?;
         info!("Started Chrome. PID: {}", process.id());
 
         Ok(Self {
             child_process: process,
+            user_data_dir,
         })
     }
-    fn start_process(launch_options: &LaunchOptions) -> Fallible<Child> {
+    fn start_process(launch_options: &LaunchOptions, user_data_dir: &TempDir) -> Fallible<Child> {
         let window_size_option = if let Some((width, height)) = launch_options.window_size {
             format!("--window-size={},{}", width, height)
         } else {
             String::from("")
         };
 
-        // NOTE: picking random data dir so that each a new browser instance is launched
-        // (see man google-chrome)
-        let user_data_dir = ::tempfile::Builder::new()
-            .prefix("rust-headless-chrome-profile")
-            .tempdir()?;
         let data_dir_option = format!("--user-data-dir={}", user_data_dir.path().to_str().unwrap());
 
         trace!("Chrome will have profile: {}", data_dir_option);
