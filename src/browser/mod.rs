@@ -429,7 +429,11 @@ pub fn default_executable() -> Result<std::path::PathBuf, String> {
 
     #[cfg(windows)]
     {
+        #[cfg(feature = "pipe")]
         use crate::browser::process_pipe::get_chrome_path_from_registry;
+
+        #[cfg(not(feature = "pipe"))]
+        use crate::browser::process_ws::get_chrome_path_from_registry;
 
         if let Some(path) = get_chrome_path_from_registry() {
             if path.exists() {
