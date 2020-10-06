@@ -386,7 +386,7 @@ impl Tab {
     pub fn wait_until_navigated(&self) -> Fallible<&Self> {
         let navigating = Arc::clone(&self.navigating);
 
-        util::Wait::with_timeout(Duration::from_secs(20)).until(|| {
+        util::Wait::with_timeout(Duration::from_secs(60)).until(|| {
             if navigating.load(Ordering::SeqCst) {
                 None
             } else {
