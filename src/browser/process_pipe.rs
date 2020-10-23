@@ -355,13 +355,17 @@ pub fn spawn(path: &PathBuf, args: Vec<&str>) -> Fallible<Child> {
         )
     };
     let err = unsafe { CloseHandle(pinfo.hThread) };
-    assert_ne!(err, 0, "{:?}", std::io::Error::last_os_error());
-    Ok(Child {
-        pid: pinfo.dwProcessId,
-        input: input_pipe1,
-        output: output_pipe1,
-        handle: Handle(pinfo.hProcess),
-    })
+
+    if err != 0 {
+        Err(std::io::Error::last_os_error().into())
+    } else {
+        Ok(Child {
+            pid: pinfo.dwProcessId,
+            input: input_pipe1,
+            output: output_pipe1,
+            handle: Handle(pinfo.hProcess),
+        })
+    }
 }
 
 #[cfg(windows)]
