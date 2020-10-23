@@ -356,7 +356,7 @@ pub fn spawn(path: &PathBuf, args: Vec<&str>) -> Fallible<Child> {
     };
     let err = unsafe { CloseHandle(pinfo.hThread) };
 
-    if err != 0 {
+    if err == 0 {
         Err(std::io::Error::last_os_error().into())
     } else {
         Ok(Child {
