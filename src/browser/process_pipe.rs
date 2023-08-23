@@ -56,11 +56,12 @@ use winapi::{
         minwinbase::{LPSECURITY_ATTRIBUTES, SECURITY_ATTRIBUTES},
         namedpipeapi::{ConnectNamedPipe, CreateNamedPipeW},
         processthreadsapi::{CreateProcessW, TerminateProcess, PROCESS_INFORMATION, STARTUPINFOW},
+        synchapi::WaitForSingleObject,
         winbase::{
             CREATE_NEW_PROCESS_GROUP, CREATE_UNICODE_ENVIRONMENT, DETACHED_PROCESS,
             FILE_FLAG_FIRST_PIPE_INSTANCE, FILE_FLAG_OVERLAPPED, PIPE_ACCESS_DUPLEX,
             PIPE_READMODE_BYTE, PIPE_TYPE_BYTE, PIPE_WAIT, STARTF_USESHOWWINDOW,
-            STARTF_USESTDHANDLES,
+            STARTF_USESTDHANDLES, INFINITE,
         },
         winnt::{FILE_READ_ATTRIBUTES, GENERIC_READ, GENERIC_WRITE},
         winreg::HKEY_LOCAL_MACHINE,
@@ -394,7 +395,10 @@ impl Child {
         self.pid
     }
     pub fn kill(&mut self) -> Fallible<()> {
-        unsafe { TerminateProcess(self.handle.as_raw_handle(), 1) };
+        unsafe {
+            TerminateProcess(self.handle.as_raw_handle(), 1);
+            WaitForSingleObject(self.handle.as_raw_handle(), INFINITE);
+        };
         Ok(())
     }
 }
