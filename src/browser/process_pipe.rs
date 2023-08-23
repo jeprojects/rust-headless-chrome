@@ -2,7 +2,7 @@ use crate::browser::default_executable;
 use crate::browser::launch_options::{LaunchOptions, DEFAULT_ARGS};
 
 use failure::{format_err, Fallible};
-use log::{info, trace};
+use log::{info, trace, warn};
 use std::path::PathBuf;
 use tempfile::TempDir;
 
@@ -178,6 +178,9 @@ impl Drop for Process {
             .kill()
             .and_then(|_| self.child_process.wait())
             .ok();
+        if let Err(e) = self.user_data_dir.close() {
+            warn!("Failed to close temp directory: {}", e);
+        }
     }
 }
 
@@ -185,7 +188,13 @@ impl Drop for Process {
 impl Drop for Process {
     fn drop(&mut self) {
         info!("Killing Chrome. PID: {}", self.child_process.id());
-        self.child_process.kill().ok();
+        self.child_process
+            .kill()
+            .and_then(|_| self.child_process.wait())
+            .ok();
+        if let Err(e) = self.user_data_dir.close() {
+            warn!("Failed to close temp directory: {}", e);
+        }
     }
 }
 
