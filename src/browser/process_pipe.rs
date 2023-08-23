@@ -71,7 +71,7 @@ use winreg::RegKey;
 
 pub struct Process {
     pub child_process: Child,
-    user_data_dir: TempDir,
+    user_data_dir: Option<TempDir>,
 }
 
 impl Process {
@@ -97,7 +97,7 @@ impl Process {
 
         Ok(Self {
             child_process: process,
-            user_data_dir,
+            user_data_dir: Some(user_data_dir),
         })
     }
     fn start_process(launch_options: &LaunchOptions, user_data_dir: &TempDir) -> Fallible<Child> {
@@ -178,8 +178,10 @@ impl Drop for Process {
             .kill()
             .and_then(|_| self.child_process.wait())
             .ok();
-        if let Err(e) = self.user_data_dir.close() {
-            warn!("Failed to close temp directory: {}", e);
+        if let Some(dir) = self.user_data_dir.take() {
+            if let Err(e) = dir.close() {
+                warn!("Failed to close temp directory: {}", e);
+            }
         }
     }
 }
@@ -190,10 +192,11 @@ impl Drop for Process {
         info!("Killing Chrome. PID: {}", self.child_process.id());
         self.child_process
             .kill()
-            .and_then(|_| self.child_process.wait())
             .ok();
-        if let Err(e) = self.user_data_dir.close() {
-            warn!("Failed to close temp directory: {}", e);
+        if let Some(dir) = self.user_data_dir.take() {
+            if let Err(e) = dir.close() {
+                warn!("Failed to close temp directory: {}", e);
+            }
         }
     }
 }
