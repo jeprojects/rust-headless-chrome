@@ -308,8 +308,8 @@ impl Child {
 
 #[cfg(windows)]
 pub fn spawn(path: &PathBuf, args: Vec<&str>) -> Fallible<Child> {
-    let (input_pipe1, input_pipe2) = create_pipe();
-    let (output_pipe1, output_pipe2) = create_pipe();
+    let (input_pipe1, input_pipe2) = create_pipe()?;
+    let (output_pipe1, output_pipe2) = create_pipe()?;
 
     let pipes = pipe_factory(input_pipe2.as_raw_handle(), output_pipe2.as_raw_handle())?;
 
@@ -364,13 +364,17 @@ pub fn spawn(path: &PathBuf, args: Vec<&str>) -> Fallible<Child> {
         )
     };
     let err = unsafe { CloseHandle(pinfo.hThread) };
-    assert_ne!(err, 0, "{:?}", std::io::Error::last_os_error());
-    Ok(Child {
-        pid: pinfo.dwProcessId,
-        input: input_pipe1,
-        output: output_pipe1,
-        handle: Handle(pinfo.hProcess),
-    })
+
+    if err == 0 {
+        Err(std::io::Error::last_os_error().into())
+    } else {
+        Ok(Child {
+            pid: pinfo.dwProcessId,
+            input: input_pipe1,
+            output: output_pipe1,
+            handle: Handle(pinfo.hProcess),
+        })
+    }
 }
 
 #[cfg(windows)]
@@ -393,7 +397,7 @@ impl Child {
 }
 
 #[cfg(windows)]
-fn create_pipe() -> (File, File) {
+fn create_pipe() -> Fallible<(File, File)> {
     let mut os_str: OsString = OsStr::new(r#"\\.\pipe\headless-chrome-"#).into();
     os_str.push(rand::random::<u16>().to_string());
     os_str.push("\x00");
@@ -437,14 +441,14 @@ fn create_pipe() -> (File, File) {
         if !ret {
             let err = unsafe { GetLastError() };
             if err != 535 {
-                panic!("Pipe error");
+                return Err(failure::err_msg("Pipe error"));
             }
         }
         let server = unsafe { File::from_raw_handle(server_handle) };
         let client = unsafe { File::from_raw_handle(child_handle) };
-        (server, client)
+        Ok((server, client))
     } else {
-        panic!(std::io::Error::last_os_error())
+        Err(std::io::Error::last_os_error().into())
     }
 }
 
