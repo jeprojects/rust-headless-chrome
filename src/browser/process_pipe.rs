@@ -197,7 +197,7 @@ impl Drop for Process {
             .ok();
 
         if let Some(dir) = self.user_data_dir.take() {
-            if let Err(e) = fs::remove_dir_all(dir.path()) {
+            if let Err(e) = rm_rf::ensure_removed(dir.path()) {
                 warn!("Failed to remove temp directory: {}", e);
             }
             if let Err(e) = dir.close() {
