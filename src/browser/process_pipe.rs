@@ -397,8 +397,8 @@ impl Child {
     pub fn kill(&mut self) -> Fallible<()> {
         unsafe {
             TerminateProcess(self.handle.as_raw_handle(), 1);
-            CloseHandle(self.handle.as_raw_handle());
             WaitForSingleObject(self.handle.as_raw_handle(), INFINITE);
+            CloseHandle(self.handle.as_raw_handle());
         };
         Ok(())
     }
