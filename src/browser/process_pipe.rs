@@ -69,6 +69,7 @@ use winapi::{
 };
 #[cfg(windows)]
 use winreg::RegKey;
+use std::fs;
 
 pub struct Process {
     pub child_process: Child,
@@ -194,7 +195,11 @@ impl Drop for Process {
         self.child_process
             .kill()
             .ok();
+
         if let Some(dir) = self.user_data_dir.take() {
+            if let Err(e) = fs::remove_dir_all(dir.path()) {
+                warn!("Failed to remove temp directory: {}", e);
+            }
             if let Err(e) = dir.close() {
                 warn!("Failed to close temp directory: {}", e);
             }
@@ -398,7 +403,6 @@ impl Child {
         unsafe {
             TerminateProcess(self.handle.as_raw_handle(), 1);
             WaitForSingleObject(self.handle.as_raw_handle(), INFINITE);
-            CloseHandle(self.handle.as_raw_handle());
         };
         Ok(())
     }
