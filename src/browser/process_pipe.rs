@@ -5,6 +5,7 @@ use failure::{format_err, Fallible};
 use log::{info, trace, warn};
 use std::path::PathBuf;
 use tempfile::TempDir;
+use std::{thread, time::Duration};
 
 //Todo: Send proper error if chrome binary not found
 
@@ -195,11 +196,8 @@ impl Drop for Process {
         self.child_process
             .kill()
             .ok();
-
+        thread::sleep(Duration::from_millis(5000));
         if let Some(dir) = self.user_data_dir.take() {
-            if let Err(e) = rm_rf::ensure_removed(dir.path()) {
-                warn!("Failed to remove temp directory: {}", e);
-            }
             if let Err(e) = dir.close() {
                 warn!("Failed to close temp directory: {}", e);
             }
