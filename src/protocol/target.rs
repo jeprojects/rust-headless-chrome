@@ -130,13 +130,25 @@ pub mod methods {
     }
 
     #[derive(Serialize, Debug)]
-    pub struct CreateBrowserContext {}
+    #[serde(rename_all = "camelCase")]
+    pub struct CreateBrowserContext<'a> {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub dispose_on_detach: Option<bool>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub proxy_server: Option<&'a str>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub proxy_bypass_list: Option<&'a str>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub origins_with_universal_network_access: Option<Vec<String>>,
+    }
+
     #[derive(Deserialize, Debug, Clone)]
     #[serde(rename_all = "camelCase")]
     pub struct CreateBrowserContextReturnObject {
         pub browser_context_id: String,
     }
-    impl Method for CreateBrowserContext {
+
+    impl<'a> Method for CreateBrowserContext<'a> {
         const NAME: &'static str = "Target.createBrowserContext";
         type ReturnObject = CreateBrowserContextReturnObject;
     }
