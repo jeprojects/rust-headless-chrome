@@ -372,7 +372,7 @@ impl Browser {
     /// Call a browser method.
     ///
     /// See the `cdtp` module documentation for available methods.
-    fn call_method<C>(&self, method: C) -> Fallible<C::ReturnObject>
+    pub fn call_method<C>(&self, method: C) -> Fallible<C::ReturnObject>
     where
         C: protocol::Method + serde::Serialize,
     {
