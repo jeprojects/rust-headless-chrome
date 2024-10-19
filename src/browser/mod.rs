@@ -248,7 +248,12 @@ impl Browser {
     pub fn new_context(&self) -> Fallible<context::Context> {
         debug!("Creating new browser context");
         let context_id = self
-            .call_method(protocol::target::methods::CreateBrowserContext {})?
+            .call_method(protocol::target::methods::CreateBrowserContext {
+                dispose_on_detach: None,
+                proxy_server: None,
+                proxy_bypass_list: None,
+                origins_with_universal_network_access: None,
+            })?
             .browser_context_id;
         debug!("Created new browser context: {:?}", context_id);
         Ok(Context::new(self, context_id))
