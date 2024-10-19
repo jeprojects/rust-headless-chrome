@@ -5,6 +5,7 @@ use failure::{format_err, Fallible};
 use log::{info, trace, warn};
 use std::path::PathBuf;
 use tempfile::TempDir;
+use std::{thread, time::Duration};
 
 //Todo: Send proper error if chrome binary not found
 
@@ -56,11 +57,12 @@ use winapi::{
         minwinbase::{LPSECURITY_ATTRIBUTES, SECURITY_ATTRIBUTES},
         namedpipeapi::{ConnectNamedPipe, CreateNamedPipeW},
         processthreadsapi::{CreateProcessW, TerminateProcess, PROCESS_INFORMATION, STARTUPINFOW},
+        synchapi::WaitForSingleObject,
         winbase::{
             CREATE_NEW_PROCESS_GROUP, CREATE_UNICODE_ENVIRONMENT, DETACHED_PROCESS,
             FILE_FLAG_FIRST_PIPE_INSTANCE, FILE_FLAG_OVERLAPPED, PIPE_ACCESS_DUPLEX,
             PIPE_READMODE_BYTE, PIPE_TYPE_BYTE, PIPE_WAIT, STARTF_USESHOWWINDOW,
-            STARTF_USESTDHANDLES,
+            STARTF_USESTDHANDLES, INFINITE,
         },
         winnt::{FILE_READ_ATTRIBUTES, GENERIC_READ, GENERIC_WRITE},
         winreg::HKEY_LOCAL_MACHINE,
@@ -68,10 +70,11 @@ use winapi::{
 };
 #[cfg(windows)]
 use winreg::RegKey;
+use std::fs;
 
 pub struct Process {
     pub child_process: Child,
-    user_data_dir: TempDir,
+    user_data_dir: Option<TempDir>,
 }
 
 impl Process {
@@ -97,7 +100,7 @@ impl Process {
 
         Ok(Self {
             child_process: process,
-            user_data_dir,
+            user_data_dir: Some(user_data_dir),
         })
     }
     fn start_process(launch_options: &LaunchOptions, user_data_dir: &TempDir) -> Fallible<Child> {
@@ -178,8 +181,10 @@ impl Drop for Process {
             .kill()
             .and_then(|_| self.child_process.wait())
             .ok();
-        if let Err(e) = self.user_data_dir.close() {
-            warn!("Failed to close temp directory: {}", e);
+        if let Some(dir) = self.user_data_dir.take() {
+            if let Err(e) = dir.close() {
+                warn!("Failed to close temp directory: {}", e);
+            }
         }
     }
 }
@@ -190,10 +195,12 @@ impl Drop for Process {
         info!("Killing Chrome. PID: {}", self.child_process.id());
         self.child_process
             .kill()
-            .and_then(|_| self.child_process.wait())
             .ok();
-        if let Err(e) = self.user_data_dir.close() {
-            warn!("Failed to close temp directory: {}", e);
+        thread::sleep(Duration::from_millis(5000));
+        if let Some(dir) = self.user_data_dir.take() {
+            if let Err(e) = dir.close() {
+                warn!("Failed to close temp directory: {}", e);
+            }
         }
     }
 }
@@ -391,7 +398,10 @@ impl Child {
         self.pid
     }
     pub fn kill(&mut self) -> Fallible<()> {
-        unsafe { TerminateProcess(self.handle.as_raw_handle(), 1) };
+        unsafe {
+            TerminateProcess(self.handle.as_raw_handle(), 1);
+            WaitForSingleObject(self.handle.as_raw_handle(), INFINITE);
+        };
         Ok(())
     }
 }
