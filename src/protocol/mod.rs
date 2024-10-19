@@ -21,6 +21,7 @@ pub mod profiler;
 pub mod runtime;
 pub mod target;
 pub mod types;
+pub mod accessibility;
 
 /// Browser window Id
 type WindowId = JsUInt;

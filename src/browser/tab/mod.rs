@@ -15,9 +15,7 @@ use crate::protocol::page::methods::{
     FileChooserAction, HandleFileChooser, Navigate, SetInterceptFileChooserDialog,
 };
 use crate::protocol::target::{TargetId, TargetInfo};
-use crate::protocol::{
-    dom, emulation, fetch, logs, network, page, profiler, runtime, target, Event, RemoteError,
-};
+use crate::protocol::{accessibility, dom, emulation, fetch, logs, network, page, profiler, runtime, target, Event, RemoteError};
 use crate::{protocol, protocol::logs::methods::ViolationSetting, util};
 
 use super::transport::SessionId;
@@ -34,6 +32,7 @@ use crate::protocol::types::{JsInt, JsUInt};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::thread::sleep;
+use crate::protocol::accessibility::methods;
 
 pub mod element;
 pub mod keyboard;
@@ -193,6 +192,7 @@ impl Tab {
         tab.call_method(page::methods::Enable {})?;
         tab.call_method(dom::methods::Enable {})?;
         tab.call_method(page::methods::SetLifecycleEventsEnabled { enabled: true })?;
+        tab.call_method(accessibility::methods::Enable {})?;
 
         tab.start_event_handler_thread();
 
@@ -540,6 +540,53 @@ impl Tab {
             .node_id;
 
         Element::new(&self, node_id)
+    }
+
+    pub fn wait_for_element_by_role(&self, role: &str, name: &str) -> Fallible<Element<'_>> {
+        self.wait_for_element_by_role_with_custom_timeout(role, name, *self.default_timeout.read().unwrap())
+    }
+
+    pub fn wait_for_element_by_role_with_custom_timeout(
+        &self,
+        role: &str,
+        name: &str,
+        timeout: std::time::Duration,
+    ) -> Fallible<Element<'_>> {
+        debug!("Waiting for element with role: {} and name: {}", role, name);
+        util::Wait::with_timeout(timeout).strict_until(
+            || self.find_element_by_role(role, name),
+            Error::downcast::<NoElementFound>,
+        )
+    }
+
+    pub fn find_element_by_role(&self, role: &str, name: &str) -> Fallible<Element<'_>> {
+        let nodes = self.call_method(methods::QueryAXTree {
+            node_id: None,
+            backend_node_id: None,
+            object_id: None,
+            accessible_name: Some(name.to_string()),
+            role: Some(role.to_string()),
+        })?
+            .nodes;
+
+        if nodes.is_empty() {
+            return Err(NoElementFound {}.into());
+        }
+
+        let node = nodes.first().unwrap();
+        let backend_node_id = node.backend_dom_node_id.ok_or_else(|| {
+            Error::from(NoElementFound {})
+        })?;
+
+        let node_id = self.call_method(dom::methods::DescribeNode {
+            node_id: None,
+            backend_node_id: Some(backend_node_id),
+            depth: Some(0),
+        })?
+            .node
+            .node_id;
+
+        Element::new(self, node_id)
     }
 
     pub fn get_document(&self) -> Fallible<Node> {
