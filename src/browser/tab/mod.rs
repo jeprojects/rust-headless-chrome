@@ -560,8 +560,15 @@ impl Tab {
     }
 
     pub fn find_element_by_role(&self, role: &str, name: &str) -> Fallible<Element<'_>> {
+        trace!("Looking up element via role: {} and name: {}", role, name);
+
+        let root_node_id = self.get_document()?.node_id;
+        self.run_query_role_on_node(root_node_id, role, name)
+    }
+
+    pub fn run_query_role_on_node(&self, node_id: NodeId, role: &str, name: &str) -> Fallible<Element<'_>> {
         let nodes = self.call_method(methods::QueryAXTree {
-            node_id: None,
+            node_id: Some(node_id),
             backend_node_id: None,
             object_id: None,
             accessible_name: Some(name.to_string()),
