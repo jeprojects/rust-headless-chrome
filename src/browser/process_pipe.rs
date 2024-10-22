@@ -122,6 +122,7 @@ impl Process {
             "--log-level=0",
             "--no-first-run",
             "--disable-audio-output",
+            "--window-position=-2400,-2400", // temporary for chromium 129 bug - https://stackoverflow.com/questions/78996364/chrome-129-headless-shows-blank-window
             data_dir_option.as_str(),
         ];
 
