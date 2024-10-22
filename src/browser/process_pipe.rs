@@ -154,7 +154,7 @@ impl Process {
 
         if launch_options.headless {
             // Headless mode won't run if it doesn't have a page to load for some reason (windows)
-            args.extend(&["--headless", "chrome://version"]);
+            args.extend(&["--headless=new", "chrome://version"]);
         }
 
         let path = launch_options
