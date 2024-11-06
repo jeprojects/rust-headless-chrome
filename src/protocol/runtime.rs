@@ -74,6 +74,7 @@ pub mod methods {
         pub description: Option<String>,
         pub class_name: Option<String>,
         pub value: Option<serde_json::Value>,
+        pub object_id: Option<String>,
         pub unserializable_value: Option<String>,
         pub preview: Option<ObjectPreview>,
     }
