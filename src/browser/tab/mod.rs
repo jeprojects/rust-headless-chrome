@@ -564,9 +564,17 @@ impl Tab {
 
         let root_node_id = self.get_document()?.node_id;
         self.run_query_role_on_node(root_node_id, role, name)
+            .map(|elements| elements.into_iter().next().unwrap())
     }
 
-    pub fn run_query_role_on_node(&self, node_id: NodeId, role: &str, name: &str) -> Fallible<Element<'_>> {
+    pub fn find_elements_by_role(&self, role: &str, name: &str) -> Fallible<Vec<Element<'_>>> {
+        trace!("Looking up elements via role: {} and name: {}", role, name);
+
+        let root_node_id = self.get_document()?.node_id;
+        self.run_query_role_on_node(root_node_id, role, name)
+    }
+
+    pub fn run_query_role_on_node(&self, node_id: NodeId, role: &str, name: &str) -> Fallible<Vec<Element<'_>>> {
         let nodes = self.call_method(methods::QueryAXTree {
             node_id: Some(node_id),
             backend_node_id: None,
@@ -580,20 +588,38 @@ impl Tab {
             return Err(NoElementFound {}.into());
         }
 
-        let node = nodes.first().unwrap();
-        let backend_node_id = node.backend_dom_node_id.ok_or_else(|| {
-            Error::from(NoElementFound {})
-        })?;
+        // Create a vector to store all elements
+        let mut elements = Vec::with_capacity(nodes.len());
 
-        let node_id = self.call_method(dom::methods::DescribeNode {
-            node_id: None,
-            backend_node_id: Some(backend_node_id),
-            depth: Some(0),
-        })?
-            .node
-            .node_id;
+        // Process each node to create an Element
+        for node in nodes {
+            let backend_node_id = match node.backend_dom_node_id {
+                Some(id) => id,
+                None => continue, // Skip nodes without a backend DOM node ID
+            };
 
-        Element::new(self, node_id)
+            // Get the node ID for each backend node
+            let node_id = match self.call_method(dom::methods::DescribeNode {
+                node_id: None,
+                backend_node_id: Some(backend_node_id),
+                depth: Some(0),
+            }) {
+                Ok(described_node) => described_node.node.node_id,
+                Err(_) => continue, // Skip nodes that fail to be described
+            };
+
+            // Create and add the element to our vector
+            if let Ok(element) = Element::new(self, node_id) {
+                elements.push(element);
+            }
+        }
+
+        // If we couldn't create any valid elements, return an error
+        if elements.is_empty() {
+            return Err(NoElementFound {}.into());
+        }
+
+        Ok(elements)
     }
 
     pub fn get_document(&self) -> Fallible<Node> {
