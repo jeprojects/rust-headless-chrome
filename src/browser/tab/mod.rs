@@ -542,6 +542,35 @@ impl Tab {
         Element::new(&self, node_id)
     }
 
+    pub fn run_query_selector_all_on_node(
+        &self,
+        node_id: NodeId,
+        selector: &str,
+    ) -> Fallible<Vec<Element<'_>>> {
+        let nodes = self
+            .call_method(dom::methods::QuerySelectorAll { node_id, selector })
+            .map_err(NoElementFound::map)?;
+
+        if nodes.node_ids.is_empty() {
+            return Err(NoElementFound {}.into());
+        }
+
+        // Create elements from all node IDs
+        let mut elements = Vec::with_capacity(nodes.node_ids.len());
+        for node_id in nodes.node_ids {
+            if let Ok(element) = Element::new(&self, node_id) {
+                elements.push(element);
+            }
+        }
+
+        // If we couldn't create any valid elements, return an error
+        if elements.is_empty() {
+            return Err(NoElementFound {}.into());
+        }
+
+        Ok(elements)
+    }
+
     pub fn wait_for_element_by_role(&self, role: &str, name: &str) -> Fallible<Element<'_>> {
         self.wait_for_element_by_role_with_custom_timeout(role, name, *self.default_timeout.read().unwrap())
     }
