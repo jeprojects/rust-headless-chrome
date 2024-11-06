@@ -320,6 +320,23 @@ pub mod methods {
 
     #[derive(Serialize, Debug)]
     #[serde(rename_all = "camelCase")]
+    pub struct RequestNode {
+        pub object_id: String,
+    }
+
+    #[derive(Debug, Deserialize)]
+    #[serde(rename_all = "camelCase")]
+    pub struct RequestNodeReturnObject {
+        pub node_id: super::NodeId,
+    }
+
+    impl Method for RequestNode {
+        const NAME: &'static str = "DOM.requestNode";
+        type ReturnObject = RequestNodeReturnObject;
+    }
+
+    #[derive(Serialize, Debug)]
+    #[serde(rename_all = "camelCase")]
     pub struct GetContentQuads<'a> {
         #[serde(skip_serializing_if = "Option::is_none")]
         pub node_id: Option<super::NodeId>,
